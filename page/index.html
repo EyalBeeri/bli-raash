@@ -1,0 +1,309 @@
+<title>בלי רעש</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;600;700&family=IBM+Plex+Sans+Hebrew:wght@400;500;600&display=swap">
+<style>
+/* Layout: one live column of story cards, newest first, grouped by day; a sticky bar holds status and the two views. */
+:root {
+  --bg: #E9EDF0;
+  --surface: #FFFFFF;
+  --ink: #12181D;
+  --ink-2: #3A4650;
+  --muted: #5E6B75;
+  --line: #D3DADF;
+  --accent: #19665D;
+  --accent-soft: #DCEDEA;
+  --act: #7A4A00;
+  --act-soft: #FBE9C8;
+  --slate: #3C5070;
+  --slate-soft: #E1E7F1;
+  --urgent: #9E1B1B;
+  --urgent-soft: #FBE1DF;
+  --chip: #EEF1F3;
+  --display: "Rubik", "Segoe UI", "Arial Hebrew", Arial, sans-serif;
+  --body: "IBM Plex Sans Hebrew", "Segoe UI", "Arial Hebrew", Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1316; --surface: #172025; --ink: #EEF2F4; --ink-2: #C4CDD3; --muted: #95A3AC; --line: #26323A;
+    --accent: #6CC6B8; --accent-soft: #173431; --act: #F2BE6B; --act-soft: #3A2C14;
+    --slate: #A8BCDD; --slate-soft: #1E2838; --urgent: #FF8A80; --urgent-soft: #3D1A19; --chip: #1F2A30;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1316; --surface: #172025; --ink: #EEF2F4; --ink-2: #C4CDD3; --muted: #95A3AC; --line: #26323A;
+  --accent: #6CC6B8; --accent-soft: #173431; --act: #F2BE6B; --act-soft: #3A2C14;
+  --slate: #A8BCDD; --slate-soft: #1E2838; --urgent: #FF8A80; --urgent-soft: #3D1A19; --chip: #1F2A30;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 18px; line-height: 1.7; -webkit-font-smoothing: antialiased; }
+a { color: inherit; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); }
+.bar-in { max-width: 720px; margin: 0 auto; padding-inline: 16px; padding-block: 12px 0; display: flex; flex-direction: column; gap: 10px; }
+.top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.wordmark { font-family: var(--display); font-weight: 700; font-size: 1.7rem; line-height: 1.1; margin: 0; letter-spacing: -0.01em; }
+.status { display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); flex: none; }
+.status.live .dot { background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.status.stale .dot { background: var(--act); }
+.status.stale { color: var(--act); }
+.tabs { display: flex; gap: 4px; }
+.tab { border: 0; background: none; padding: 8px 12px 10px; font-size: 0.95rem; font-weight: 500; color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent; }
+.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink); }
+.tab .n { font-variant-numeric: tabular-nums; color: var(--muted); font-weight: 400; margin-inline-start: 4px; }
+
+main { max-width: 720px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 64px; display: flex; flex-direction: column; gap: 14px; }
+.day { font-family: var(--display); font-weight: 500; font-size: 0.95rem; color: var(--muted); margin: 14px 4px 0; }
+.day:first-child { margin-top: 0; }
+
+.story { background: var(--surface); border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--line); }
+.story.urgent { border-color: var(--urgent); box-shadow: 0 0 0 1px var(--urgent) inset; }
+.meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 0.8rem; }
+.time { font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ink-2); margin-inline-end: 4px; }
+.upd { color: var(--muted); }
+.pill { padding: 2px 9px; border-radius: 999px; font-weight: 500; line-height: 1.5; white-space: nowrap; }
+.pill.topic { background: var(--chip); color: var(--ink-2); }
+.pill.act { background: var(--act-soft); color: var(--act); }
+.pill.state { background: var(--accent-soft); color: var(--accent); }
+.pill.lasting { background: var(--slate-soft); color: var(--slate); }
+.pill.urgent { background: var(--urgent); color: var(--surface); font-weight: 600; }
+.pill.single { border: 1px dashed var(--line); color: var(--muted); }
+.story h3 { font-family: var(--display); font-weight: 600; font-size: 1.3rem; line-height: 1.4; margin: 0; text-wrap: balance; }
+.story p { margin: 0; color: var(--ink); }
+.todo { background: var(--act-soft); border-radius: 8px; padding: 10px 14px; font-size: 0.97rem; }
+.todo b { color: var(--act); margin-inline-end: 6px; }
+.foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 2px; }
+.srcs { display: flex; flex-wrap: wrap; gap: 6px; font-size: 0.82rem; }
+.src { text-decoration: none; padding: 2px 9px; border-radius: 6px; border: 1px solid var(--line); color: var(--ink-2); }
+.src:hover { border-color: var(--ink-2); }
+.fb { border: 1px solid var(--line); background: none; border-radius: 6px; padding: 2px 10px; font-size: 0.8rem; color: var(--muted); cursor: pointer; }
+.fb[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+
+.empty { background: var(--surface); border: 1px dashed var(--line); border-radius: 12px; padding: 28px 20px; text-align: center; color: var(--muted); }
+.empty b { display: block; color: var(--ink); font-family: var(--display); font-weight: 600; font-size: 1.15rem; margin-bottom: 4px; }
+
+.cuts-head { display: flex; flex-direction: column; gap: 10px; }
+.cuts-head p { margin: 0; color: var(--ink-2); font-size: 0.95rem; }
+.cats { display: flex; flex-wrap: wrap; gap: 6px; }
+.cat { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 3px 12px; font-size: 0.85rem; cursor: pointer; font-variant-numeric: tabular-nums; }
+.cat[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.cuts { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.cut { padding: 12px 16px; border-top: 1px solid var(--line); display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; }
+.cut:first-child { border-top: 0; }
+.cut .t { font-size: 0.98rem; line-height: 1.5; min-width: 0; }
+.cut .t a { text-decoration: none; }
+.cut .t a:hover { text-decoration: underline; }
+.cut .why { grid-column: 1; font-size: 0.8rem; color: var(--muted); }
+.cut .fb { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
+
+footer { max-width: 720px; margin: 0 auto; padding-inline: 16px; padding-block: 0 40px; font-size: 0.8rem; color: var(--muted); display: flex; flex-direction: column; gap: 6px; }
+.health { display: flex; flex-wrap: wrap; gap: 4px 14px; font-variant-numeric: tabular-nums; }
+.health .bad { color: var(--urgent); }
+@media (max-width: 480px) {
+  body { font-size: 17px; }
+  .story { padding: 16px; }
+  .story h3 { font-size: 1.2rem; }
+  .wordmark { font-size: 1.5rem; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .story.fresh { animation: arrive 1.2s ease-out; }
+  @keyframes arrive { from { background: var(--accent-soft); } to { background: var(--surface); } }
+}
+</style>
+
+<div dir="rtl" lang="he">
+  <div class="bar">
+    <div class="bar-in">
+      <div class="top">
+        <h1 class="wordmark">בלי רעש</h1>
+        <span class="status" id="status"><span class="dot"></span><span id="status-text">מתחבר…</span></span>
+      </div>
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" id="tab-news" aria-selected="true" aria-controls="view">חדשות<span class="n" id="n-news"></span></button>
+        <button class="tab" role="tab" id="tab-cuts" aria-selected="false" aria-controls="view">מה סוננו<span class="n" id="n-cuts"></span></button>
+      </div>
+    </div>
+  </div>
+  <main id="view" role="tabpanel">
+    <div class="empty"><b>ממתין לעדכון הראשון</b>הדף מתעדכן לבד כשמגיעות ידיעות חדשות.</div>
+  </main>
+  <footer id="foot"></footer>
+</div>
+
+<script>
+const IMPACT = { act: "משנה מה לעשות", state: "משנה את מצב המדינה", lasting: "ישפיע לאורך זמן" };
+const TZ = "Asia/Jerusalem";
+const hm = new Intl.DateTimeFormat("he-IL", { timeZone: TZ, hour: "2-digit", minute: "2-digit", hour12: false });
+const dayKey = new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" });
+const dayName = new Intl.DateTimeFormat("he-IL", { timeZone: TZ, weekday: "long", day: "numeric", month: "numeric" });
+
+const state = { feed: null, filtered: null, tab: "news", cat: null, votes: { stories: {}, filtered: {} }, canVote: false, seen: new Set(), fresh: new Set(), first: true };
+let votesRef = null, votesExist = false, writing = Promise.resolve(), perms = null, dbState = null;
+const withTimeout = (p, ms) => Promise.race([p, new Promise((_, no) => setTimeout(() => no({ code: "timeout" }), ms))]);
+
+try { const t = localStorage.getItem("bli-tab"); if (t === "news" || t === "cuts") state.tab = t; } catch (e) {}
+
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const safeUrl = u => /^https?:\/\//.test(u || "") ? u : "#";
+
+const fmt = iso => { try { return hm.format(new Date(iso)); } catch (e) { return ""; } };
+function ago(iso) {
+  const m = Math.round((Date.now() - new Date(iso)) / 60000);
+  if (!Number.isFinite(m)) return "";
+  if (m < 1) return "עכשיו";
+  if (m < 60) return `לפני ${m} דק׳`;
+  const h = Math.floor(m / 60);
+  return h === 1 ? "לפני שעה" : h === 2 ? "לפני שעתיים" : `לפני ${h} שעות`;
+}
+function dayLabel(iso) {
+  let k;
+  try { k = dayKey.format(new Date(iso)); } catch (e) { return ""; }
+  const today = dayKey.format(new Date());
+  const y = dayKey.format(new Date(Date.now() - 864e5));
+  return k === today ? "היום" : k === y ? "אתמול" : dayName.format(new Date(iso));
+}
+
+function storyHtml(s) {
+  const srcs = [];
+  const names = new Set();
+  for (const x of s.sources || []) if (!names.has(x.name)) { names.add(x.name); srcs.push(x); }
+  const pills = [`<span class="pill topic">${esc(s.topic)}</span>`]
+    .concat((s.impact || []).filter(k => IMPACT[k]).map(k => `<span class="pill ${k}">${IMPACT[k]}</span>`));
+  if (s.urgent) pills.unshift(`<span class="pill urgent">דחוף</span>`);
+  if (names.size === 1) pills.push(`<span class="pill single" title="רק כלי תקשורת אחד דיווח על זה">מקור אחד</span>`);
+  const upd = s.updates > 0 ? `<span class="upd">עודכן · פורסם לראשונה ${fmt(s.created)}</span>` : "";
+  const fresh = state.fresh.has(s.id + s.updated) ? " fresh" : "";
+  const vote = state.canVote ? `<button class="fb" data-kind="stories" data-id="${esc(s.id)}" aria-pressed="${state.votes.stories[s.id] === "drop"}">לא היה צריך להופיע</button>` : "";
+  return `<article class="story${s.urgent ? " urgent" : ""}${fresh}">
+    <div class="meta"><span class="time">${fmt(s.updated)}</span>${pills.join("")}${upd}</div>
+    <h3>${esc(s.headline)}</h3>
+    <p>${esc(s.summary)}</p>
+    ${s.action ? `<div class="todo"><b>מה לעשות</b>${esc(s.action)}</div>` : ""}
+    <div class="foot"><div class="srcs">${srcs.map(x => `<a class="src" href="${esc(safeUrl(x.url))}" target="_blank" rel="noopener">${esc(x.name)}</a>`).join("")}</div>${vote}</div>
+  </article>`;
+}
+
+function renderNews() {
+  const stories = [...(state.feed?.stories || [])].sort((a, b) => b.updated.localeCompare(a.updated));
+  if (!stories.length) return `<div class="empty"><b>${state.feed ? "אין עדיין ידיעות שעברו את המבחן" : "ממתין לעדכון הראשון"}</b>הדף מתעדכן לבד כשמגיעות ידיעות חדשות.</div>`;
+  let out = "", last = null;
+  for (const s of stories) {
+    const d = dayLabel(s.updated);
+    if (d !== last) { out += `<h2 class="day">${esc(d)}</h2>`; last = d; }
+    out += storyHtml(s);
+  }
+  return out;
+}
+
+function renderCuts() {
+  const items = [...(state.filtered?.items || [])].sort((a, b) => b.t.localeCompare(a.t));
+  if (!items.length) return `<div class="empty"><b>עוד לא סונן כלום</b>כאן יופיע כל מה שנחתך, עם הסיבה.</div>`;
+  const counts = {};
+  for (const it of items) counts[it.category] = (counts[it.category] || 0) + 1;
+  const cats = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  const shown = state.cat ? items.filter(i => i.category === state.cat) : items;
+  return `<div class="cuts-head">
+      <p>מה שנחתך לאחרונה, ולמה. ראיתם משהו שהיה צריך להופיע? סמנו אותו, וכך הכללים ישתפרו.</p>
+      <div class="cats">${cats.map(([c, n]) => `<button class="cat" data-cat="${esc(c)}" aria-pressed="${state.cat === c}">${esc(c)} · ${n}</button>`).join("")}</div>
+    </div>
+    <ul class="cuts">${shown.map(it => `<li class="cut">
+      <span class="t"><a href="${esc(safeUrl(it.url))}" target="_blank" rel="noopener">${esc(it.title)}</a></span>
+      <span class="why">${fmt(it.t)} · ${esc(it.source)} · ${esc(it.category)}${it.reason ? " · " + esc(it.reason) : ""}</span>
+      ${state.canVote ? `<button class="fb" data-kind="filtered" data-id="${esc(it.id)}" aria-pressed="${state.votes.filtered[it.id] === "keep"}">היה צריך להופיע</button>` : ""}
+    </li>`).join("")}</ul>`;
+}
+
+function renderStatus() {
+  const el = document.getElementById("status"), txt = document.getElementById("status-text");
+  if (!state.feed?.updated) { el.className = "status"; txt.textContent = state.dbMissing ? "לא זמין בתצוגה הזו" : "ממתין לעדכון"; return; }
+  const mins = (Date.now() - new Date(state.feed.updated)) / 60000;
+  el.className = "status " + (mins > 45 ? "stale" : "live");
+  txt.textContent = (mins > 45 ? "המערכת לא פעילה · נבדק " : "חי · נבדק ") + ago(state.feed.updated);
+}
+
+function renderFoot() {
+  const h = state.feed?.health || [];
+  if (!h.length) { document.getElementById("foot").innerHTML = ""; return; }
+  document.getElementById("foot").innerHTML = `${state.voteMsg ? `<div class="health"><span class="bad">${esc(state.voteMsg)}</span></div>` : ""}<div>מקורות: ${h.length} אתרים, נבדקים כל 2 דקות.</div>
+    <div class="health">${h.map(x => `<span class="${x.ok ? "" : "bad"}" title="${esc(x.error || "")}">${esc(x.source)} ${x.ok ? (x.newest ? "· " + ago(x.newest) : "") : "· תקלה"}</span>`).join("")}</div>`;
+}
+
+function render() {
+  document.getElementById("n-news").textContent = state.feed?.stories?.length ? state.feed.stories.length : "";
+  document.getElementById("n-cuts").textContent = state.filtered?.items?.length ? state.filtered.items.length : "";
+  for (const t of ["news", "cuts"]) document.getElementById("tab-" + t).setAttribute("aria-selected", String(state.tab === t));
+  document.getElementById("view").innerHTML = state.tab === "news" ? renderNews() : renderCuts();
+  renderStatus();
+  renderFoot();
+}
+
+document.addEventListener("click", e => {
+  const tab = e.target.closest(".tab");
+  if (tab) {
+    state.tab = tab.id === "tab-cuts" ? "cuts" : "news";
+    try { localStorage.setItem("bli-tab", state.tab); } catch (err) {}
+    render(); window.scrollTo(0, 0); return;
+  }
+  const cat = e.target.closest(".cat");
+  if (cat) { state.cat = state.cat === cat.dataset.cat ? null : cat.dataset.cat; render(); return; }
+  const fb = e.target.closest(".fb");
+  if (fb && votesRef) {
+    const { kind, id } = fb.dataset, mark = kind === "stories" ? "drop" : "keep";
+    const bag = state.votes[kind] = { ...(state.votes[kind] || {}) };
+    bag[id] = bag[id] === mark ? "none" : mark;
+    fb.setAttribute("aria-pressed", String(bag[id] === mark));
+    // Merge just this vote, so another tab or device doesn't overwrite earlier ones.
+    const patch = { [kind]: { [id]: bag[id] }, updated: new Date().toISOString() };
+    // The database asks permission on first use; ask inside this click so the dialog can show.
+    const permit = perms && dbState === "prompt" ? perms.request(["db"]).then(r => { dbState = r.db; }) : Promise.resolve();
+    writing = writing.then(() => permit).then(async () => {
+      if (votesExist) await withTimeout(votesRef.update(patch), 10000);
+      else { await withTimeout(votesRef.set({ stories: {}, filtered: {}, ...patch }), 10000); votesExist = true; }
+      state.voteMsg = "";
+    }).catch(err => {
+      if (err?.code === "invalid_argument") state.canVote = false;
+      state.voteMsg = dbState === "denied" ? "הסימונים חסומים: אפשרו שמירה בתפריט ההרשאות של הדף." : "הסימון האחרון לא נשמר. נסו שוב.";
+      render();
+    });
+  }
+});
+
+setInterval(() => { renderStatus(); renderFoot(); }, 30000);
+
+(async () => {
+  const db = window.claude?.use ? await window.claude.use("db") : null;
+  if (!db) { state.dbMissing = true; render(); return; }
+  db.doc("feed/latest").onSnapshot(s => {
+    state.feed = s.exists ? s.data() : null;
+    // Highlight what arrived since the last delivery; the set lasts until the next feed update.
+    const keys = (state.feed?.stories || []).map(x => x.id + x.updated);
+    state.fresh = state.first ? new Set() : new Set(keys.filter(k => !state.seen.has(k)));
+    keys.forEach(k => state.seen.add(k));
+    if (state.feed) state.first = false;
+    render();
+  }, () => {});
+  db.doc("feed/filtered").onSnapshot(s => { state.filtered = s.exists ? s.data() : null; render(); }, () => {});
+  const [user, p] = await Promise.all([window.claude.use("user"), window.claude.use("permissions")]);
+  perms = p;
+  dbState = p ? await p.state("db") : "granted";
+  const uid = user ? await user.id() : null;
+  if (!uid) return;
+  try {
+    votesRef = db.doc("votes/" + uid);
+    const v = await votesRef.get();
+    votesExist = v.exists;
+    if (v.exists) {
+      const d = v.data();
+      state.votes = { stories: { ...(d.stories || {}) }, filtered: { ...(d.filtered || {}) } };
+    }
+    state.canVote = user.can ? (await user.can("data.write")) !== false : true;
+    render();
+  } catch (e) { votesRef = null; }
+})();
+render();
+</script>

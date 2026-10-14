@@ -1,0 +1,249 @@
+<title>בלי רעש · כיול</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;600;700&family=IBM+Plex+Sans+Hebrew:wght@400;500;600&display=swap">
+<style>
+/* Layout: the feed's reading column; each event is a card with three answer buttons. Comparison is hidden until asked for. */
+:root {
+  --bg: #E9EDF0; --surface: #FFFFFF; --ink: #12181D; --ink-2: #3A4650; --muted: #5E6B75; --line: #D3DADF;
+  --accent: #19665D; --accent-soft: #DCEDEA; --act: #7A4A00; --act-soft: #FBE9C8; --no: #3C5070; --no-soft: #E1E7F1;
+  --chip: #EEF1F3;
+  --display: "Rubik", "Segoe UI", "Arial Hebrew", Arial, sans-serif;
+  --body: "IBM Plex Sans Hebrew", "Segoe UI", "Arial Hebrew", Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1316; --surface: #172025; --ink: #EEF2F4; --ink-2: #C4CDD3; --muted: #95A3AC; --line: #26323A;
+    --accent: #6CC6B8; --accent-soft: #173431; --act: #F2BE6B; --act-soft: #3A2C14; --no: #A8BCDD; --no-soft: #1E2838;
+    --chip: #1F2A30; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1316; --surface: #172025; --ink: #EEF2F4; --ink-2: #C4CDD3; --muted: #95A3AC; --line: #26323A;
+  --accent: #6CC6B8; --accent-soft: #173431; --act: #F2BE6B; --act-soft: #3A2C14; --no: #A8BCDD; --no-soft: #1E2838;
+  --chip: #1F2A30; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.65; -webkit-font-smoothing: antialiased; }
+button, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); }
+.bar-in { max-width: 720px; margin: 0 auto; padding-inline: 16px; padding-block: 12px; display: flex; flex-direction: column; gap: 10px; }
+.top { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.wordmark { font-family: var(--display); font-weight: 700; font-size: 1.5rem; margin: 0; }
+.sub { font-family: var(--display); font-weight: 500; color: var(--muted); font-size: 1.1rem; }
+.progress { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.track { flex: 1; height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+.fill { height: 100%; background: var(--accent); width: 0; transition: width .3s; }
+.controls { display: flex; flex-wrap: wrap; gap: 6px; }
+.toggle { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 3px 12px; font-size: 0.85rem; cursor: pointer; }
+.toggle[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+
+main { max-width: 720px; margin: 0 auto; padding-inline: 16px; padding-block: 18px 64px; display: flex; flex-direction: column; gap: 12px; }
+.intro { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 6px; }
+.intro p { margin: 0; color: var(--ink-2); font-size: 0.95rem; }
+.intro b { color: var(--ink); }
+.summary { background: var(--accent-soft); border-radius: 12px; padding: 14px 18px; font-size: 0.95rem; }
+.warn { background: var(--act-soft); color: var(--act); border-radius: 12px; padding: 12px 16px; font-size: 0.9rem; }
+
+.ev { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; }
+.ev.disagree { border-color: var(--act); box-shadow: 0 0 0 1px var(--act) inset; }
+.ev .time { font-size: 0.8rem; font-weight: 600; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.ev h3 { font-family: var(--display); font-weight: 600; font-size: 1.15rem; line-height: 1.4; margin: 0; text-wrap: balance; }
+.ev .text { margin: 0; color: var(--ink-2); font-size: 0.93rem; }
+.more { margin: 0; padding: 0; list-style: none; font-size: 0.88rem; color: var(--muted); display: flex; flex-direction: column; gap: 2px; }
+.more li::before { content: "· "; }
+.ev a { color: inherit; }
+.answers { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.ans { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 6px 16px; font-weight: 500; cursor: pointer; min-height: 40px; }
+.ans:hover { border-color: var(--ink-2); }
+.ans.in[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.ans.out[aria-pressed="true"] { background: var(--no); border-color: var(--no); color: var(--surface); }
+.ans.unsure[aria-pressed="true"] { background: var(--chip); border-color: var(--ink-2); }
+.notebtn { border: 0; background: none; color: var(--muted); font-size: 0.85rem; text-decoration: underline; cursor: pointer; padding: 6px 4px; }
+.note { width: 100%; min-height: 60px; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; background: var(--bg); resize: vertical; font-size: 0.93rem; }
+.mine { font-size: 0.88rem; display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; border-top: 1px dashed var(--line); padding-top: 8px; }
+.pill { padding: 1px 9px; border-radius: 999px; font-weight: 500; font-size: 0.8rem; white-space: nowrap; }
+.pill.in { background: var(--accent-soft); color: var(--accent); }
+.pill.out { background: var(--no-soft); color: var(--no); }
+.mine .why { color: var(--muted); }
+.done { text-align: center; color: var(--muted); padding: 20px; }
+.save { margin-inline-start: auto; font-size: 0.8rem; padding: 2px 10px; border-radius: 999px; background: var(--chip); color: var(--muted); }
+.save.ok { background: var(--accent-soft); color: var(--accent); }
+.save.bad { background: var(--act-soft); color: var(--act); }
+.allow { border: 0; background: var(--act); color: var(--surface); border-radius: 8px; padding: 6px 14px; font-weight: 600; cursor: pointer; margin-inline-start: 8px; }
+@media (max-width: 480px) { .ev { padding: 14px; } }
+</style>
+
+<div dir="rtl" lang="he">
+  <div class="bar"><div class="bar-in">
+    <div class="top"><h1 class="wordmark">בלי רעש</h1><span class="sub">כיול</span><span class="save" id="save"></span></div>
+    <div class="progress"><div class="track"><div class="fill" id="fill"></div></div><span id="count"></span></div>
+    <div class="controls">
+      <button class="toggle" id="only-open" aria-pressed="false">רק מה שלא סימנתי</button>
+      <button class="toggle" id="compare" aria-pressed="false">הצג את ההחלטות שלי</button>
+      <button class="toggle" id="only-diff" aria-pressed="false" hidden>רק אי-הסכמות</button>
+      <button class="toggle" id="copy">העתק את התשובות</button>
+    </div>
+    <textarea class="note" id="copy-box" hidden readonly aria-label="התשובות שלכם"></textarea>
+  </div></div>
+  <main id="main"></main>
+</div>
+
+<script>
+const SET = /*DATA*/null;
+const TZ = "Asia/Jerusalem";
+const hm = new Intl.DateTimeFormat("he-IL", { timeZone: TZ, weekday: "short", hour: "2-digit", minute: "2-digit", hour12: false });
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const safeUrl = u => /^https?:\/\//.test(u || "") ? u : "#";
+const LABEL = { in: "להכניס", out: "לא", unsure: "לא בטוח" };
+
+const state = { labels: {}, onlyOpen: false, compare: false, onlyDiff: false, openNotes: new Set(), save: "idle" };
+const LOCAL = "bli-calib-" + SET.set;
+let ref = null, perms = null, dbState = null, saving = Promise.resolve(), timer = null;
+
+// Answers are also kept on this device, so nothing is lost if the database can't be reached.
+try { const l = JSON.parse(localStorage.getItem(LOCAL) || "null"); if (l) state.labels = l; } catch (e) {}
+const keepLocal = () => { try { localStorage.setItem(LOCAL, JSON.stringify(state.labels)); } catch (e) {} };
+const withTimeout = (p, ms) => Promise.race([p, new Promise((_, no) => setTimeout(() => no({ code: "timeout" }), ms))]);
+
+// The database asks the viewer's permission on first use; ask inside a click so the dialog can show.
+function askIfNeeded() {
+  if (perms && dbState === "prompt") {
+    perms.request(["db"]).then(r => { dbState = r.db; renderSave(); if (dbState === "granted") scheduleSave(); });
+  }
+}
+
+function scheduleSave() {
+  keepLocal();
+  clearTimeout(timer);
+  timer = setTimeout(() => {
+    if (!ref || dbState === "denied" || dbState === "unavailable") { renderSave(); return; }
+    state.save = "saving"; renderSave();
+    const body = { sets: { [SET.set]: JSON.parse(JSON.stringify(state.labels)) }, updated: new Date().toISOString() };
+    saving = saving.then(() => withTimeout(ref.set(body), 10000))
+      .then(() => { state.save = "saved"; renderSave(); })
+      .catch(() => { state.save = "failed"; renderSave(); });
+  }, 500);
+}
+
+function renderSave() {
+  const el = document.getElementById("save");
+  let cls = "save", text = "", btn = "";
+  if (dbState === "prompt") { cls += " bad"; text = "השמירה צריכה אישור"; btn = `<button class="allow" id="allow">אישור</button>`; }
+  else if (dbState === "denied") { cls += " bad"; text = "השמירה חסומה"; btn = `<button class="allow" id="manage">הרשאות</button>`; }
+  else if (!ref || dbState === "unavailable") { cls += " bad"; text = "נשמר רק במכשיר הזה"; }
+  else if (state.save === "saving") text = "שומר…";
+  else if (state.save === "saved") { cls += " ok"; text = "נשמר"; }
+  else if (state.save === "failed") { cls += " bad"; text = "לא נשמר · נסו שוב או העתיקו"; }
+  el.className = cls; el.innerHTML = text + btn;
+}
+
+function evHtml(e) {
+  const mine = state.labels[e.id] || {};
+  const [first, ...rest] = e.flashes;
+  const disagree = state.compare && mine.v && mine.v !== "unsure" && mine.v !== e.verdict;
+  const noteOpen = state.openNotes.has(e.id) || mine.note;
+  return `<article class="ev${disagree ? " disagree" : ""}" data-id="${esc(e.id)}">
+    <span class="time">${esc(hm.format(new Date(e.t)))}</span>
+    <h3>${esc(first.title)}</h3>
+    ${first.text ? `<p class="text">${esc(first.text)}</p>` : ""}
+    ${rest.length ? `<ul class="more">${rest.map(f => `<li>${esc(f.title)}</li>`).join("")}</ul>` : ""}
+    <div class="answers" role="group" aria-label="האם להכניס לפיד">
+      ${["in", "out", "unsure"].map(v => `<button class="ans ${v}" data-v="${v}" aria-pressed="${mine.v === v}">${LABEL[v]}</button>`).join("")}
+      ${noteOpen ? "" : `<button class="notebtn" data-note="1">הוסף הערה</button>`}
+    </div>
+    ${noteOpen ? `<textarea class="note" id="note-${esc(e.id)}" placeholder="למה? (לא חובה)">${esc(mine.note || "")}</textarea>` : ""}
+    ${state.compare ? `<div class="mine"><span class="pill ${e.verdict}">אני: ${e.verdict === "in" ? "להכניס" : "לא"}</span><span class="why">${esc(e.reason)}</span></div>` : ""}
+  </article>`;
+}
+
+function render() {
+  const evs = SET.events;
+  const labeled = evs.filter(e => state.labels[e.id]?.v).length;
+  document.getElementById("fill").style.width = (100 * labeled / evs.length) + "%";
+  document.getElementById("count").textContent = `${labeled} מתוך ${evs.length}`;
+  document.getElementById("only-open").setAttribute("aria-pressed", state.onlyOpen);
+  document.getElementById("compare").setAttribute("aria-pressed", state.compare);
+  const diffBtn = document.getElementById("only-diff");
+  diffBtn.hidden = !state.compare;
+  diffBtn.setAttribute("aria-pressed", state.onlyDiff);
+
+  let head = `<div class="intro"><p><b>האם הייתם רוצים לראות את זה בפיד?</b> כל כרטיס הוא אירוע אחד מתוך ${SET.flash_count} המבזקים האחרונים של ynet (כמה מבזקים על אותו אירוע אוחדו). שפטו את החשיבות, לא את הניסוח.</p>
+    <p>ההחלטות שלי מוסתרות כדי לא להשפיע. כשתסיימו, לחצו "הצג את ההחלטות שלי" כדי לראות איפה לא הסכמנו.</p></div>`;
+  if (state.compare) {
+    const judged = evs.filter(e => ["in", "out"].includes(state.labels[e.id]?.v));
+    const agree = judged.filter(e => state.labels[e.id].v === e.verdict).length;
+    const youIn = judged.filter(e => state.labels[e.id].v === "in" && e.verdict === "out").length;
+    const meIn = judged.filter(e => state.labels[e.id].v === "out" && e.verdict === "in").length;
+    head += `<div class="summary">${judged.length ? `הסכמנו ב-${agree} מתוך ${judged.length}. ${youIn} שרציתם ואני חתכתי, ${meIn} שהכנסתי ואתם לא.` : "עוד לא סימנתם אירועים."}</div>`;
+  }
+  let list = evs;
+  if (state.onlyOpen) list = list.filter(e => !state.labels[e.id]?.v);
+  if (state.compare && state.onlyDiff) list = list.filter(e => { const v = state.labels[e.id]?.v; return v && v !== "unsure" && v !== e.verdict; });
+  const body = list.length ? list.map(evHtml).join("") : `<div class="done">${state.onlyOpen ? "סימנתם הכול. תודה!" : "אין כאן כלום."}</div>`;
+  document.getElementById("main").innerHTML = head + body;
+}
+
+document.addEventListener("click", e => {
+  if (e.target.closest("#allow")) { askIfNeeded(); return; }
+  if (e.target.closest("#manage")) { perms?.manage().then(async () => { dbState = await perms.state("db"); renderSave(); scheduleSave(); }).catch(() => {}); return; }
+  if (e.target.closest("#copy")) {
+    const text = JSON.stringify({ set: SET.set, labels: state.labels });
+    const box = document.getElementById("copy-box");
+    navigator.clipboard?.writeText(text).then(() => { e.target.textContent = "הועתק"; }).catch(() => {
+      box.hidden = false; box.value = text; box.select();
+    });
+    if (!navigator.clipboard) { box.hidden = false; box.value = text; box.select(); }
+    return;
+  }
+  const ans = e.target.closest(".ans");
+  if (ans) {
+    askIfNeeded();
+    const id = ans.closest(".ev").dataset.id, v = ans.dataset.v;
+    const cur = { ...(state.labels[id] || {}) };
+    cur.v = cur.v === v ? undefined : v;
+    if (!cur.v && !cur.note) delete state.labels[id]; else state.labels = { ...state.labels, [id]: cur };
+    render(); scheduleSave(); return;
+  }
+  if (e.target.closest(".notebtn")) {
+    const id = e.target.closest(".ev").dataset.id;
+    state.openNotes.add(id); render();
+    document.getElementById("note-" + id)?.focus(); return;
+  }
+  const t = e.target.closest(".toggle");
+  if (t) {
+    if (t.id === "only-open") state.onlyOpen = !state.onlyOpen;
+    if (t.id === "compare") { state.compare = !state.compare; if (!state.compare) state.onlyDiff = false; }
+    if (t.id === "only-diff") state.onlyDiff = !state.onlyDiff;
+    render();
+  }
+});
+document.addEventListener("input", e => {
+  if (!e.target.classList.contains("note")) return;
+  const id = e.target.id.slice(5);
+  state.labels = { ...state.labels, [id]: { ...(state.labels[id] || {}), note: e.target.value } };
+  scheduleSave();
+});
+
+(async () => {
+  const use = window.claude?.use;
+  const [db, user, p] = use ? await Promise.all([use("db"), use("user"), use("permissions")]) : [null, null, null];
+  perms = p;
+  dbState = perms ? await perms.state("db") : (db ? "granted" : "unavailable");
+  const uid = user ? await user.id() : null;
+  if (db && uid) {
+    ref = db.doc("labels/" + uid);
+    try {
+      const snap = await withTimeout(ref.get(), 10000);
+      const saved = snap.exists ? snap.data()?.sets?.[SET.set] : null;
+      // Keep whichever copy has more answers (this device may hold answers the database never got).
+      if (saved && Object.keys(saved).length >= Object.keys(state.labels).length) state.labels = JSON.parse(JSON.stringify(saved));
+      else if (Object.keys(state.labels).length) scheduleSave();
+    } catch (e) {}
+  }
+  render(); renderSave();
+})();
+render(); renderSave();
+</script>

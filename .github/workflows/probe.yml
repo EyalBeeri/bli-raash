@@ -1,0 +1,25 @@
+# One-off check before moving to the cloud: can GitHub's servers reach every outlet,
+# and does Claude run here on the subscription token?
+name: probe
+on: workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Fetch every outlet from GitHub's servers
+        run: python sources.py
+      - name: Check the Claude subscription token
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: |
+          if [ -z "$CLAUDE_CODE_OAUTH_TOKEN" ]; then echo "No token secret yet; skipping the Claude check."; exit 0; fi
+          npm install -g @anthropic-ai/claude-code
+          claude -p "Reply with the single word OK." --model haiku --tools "" --output-format json --no-session-persistence \
+            | python -c "import json,sys; d=json.load(sys.stdin); print('claude:', d.get('result'), '| is_error:', d.get('is_error'))"
