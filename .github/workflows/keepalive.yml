@@ -1,0 +1,21 @@
+# GitHub switches off scheduled workflows in public repos after 60 days without repository activity.
+# The feed never commits (its state lives in the cache), so once a month we re-enable both schedules.
+name: keepalive
+on:
+  schedule:
+    - cron: "17 6 1,15 * *"
+  workflow_dispatch:
+permissions:
+  actions: write
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Re-enable the scheduled workflows
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for wf in feed.yml keepalive.yml; do
+            gh api -X PUT "repos/${{ github.repository }}/actions/workflows/$wf/enable" && echo "enabled $wf"
+          done
