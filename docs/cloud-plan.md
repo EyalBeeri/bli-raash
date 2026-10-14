@@ -29,6 +29,10 @@ GitHub's machines are in US data centers, and some Israeli sites block or thrott
 - an Israeli IP, a real 2-minute loop, and the current code almost unchanged;
 - but the signup needs a credit card for identity checks (no charge within the free tier), and Oracle can reclaim free servers it considers idle.
 
+## Status (2026-10-15)
+
+Steps 1–5 are done. The feed runs from the GitHub workflow; the PC loop and the publisher session are stopped, and the old claude.ai link points to the new site. Davar and Times of Israel are skipped in the cloud because they refuse data-center traffic.
+
 ## Steps
 
 1. **Probe (me, about 30 min).** Create the public repo `EyalBeeri/bli-raash` and a one-off workflow that fetches all 10 outlets from GitHub's servers and runs one tiny `claude -p` call. This answers the two unknowns that decide the plan: whether the sites answer foreign servers, and whether the subscription token works there.
