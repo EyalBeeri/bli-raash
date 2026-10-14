@@ -1,0 +1,17 @@
+{
+  "name": "בלי רעש",
+  "short_name": "בלי רעש",
+  "description": "רק מה שחשוב לדעת: ידיעות שדווחו בכמה כלי תקשורת, בלי דרמה ובלי רעש.",
+  "lang": "he",
+  "dir": "rtl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#FCE9DC",
+  "theme_color": "#FCE9DC",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

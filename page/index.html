@@ -1,157 +1,202 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>בלי רעש</title>
+<meta name="description" content="רק מה שחשוב לדעת: ידיעות מכמה כלי תקשורת, בלי דרמה ובלי רעש.">
+<meta name="theme-color" content="#FCE9DC" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1F1720" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="בלי רעש">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;600;700&family=IBM+Plex+Sans+Hebrew:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Assistant:wght@400;600;700&display=swap">
 <style>
-/* Layout: one live column of story cards, newest first, grouped by day; a sticky bar holds status and the two views. */
+/* Layout: a calm reading column. Each day's stories sit on one warm sheet, separated by soft rules;
+   the feed ends on purpose with the "settled line" mark. Mobile first, RTL throughout. */
 :root {
-  --bg: #E9EDF0;
-  --surface: #FFFFFF;
-  --ink: #12181D;
-  --ink-2: #3A4650;
-  --muted: #5E6B75;
-  --line: #D3DADF;
-  --accent: #19665D;
-  --accent-soft: #DCEDEA;
-  --act: #7A4A00;
-  --act-soft: #FBE9C8;
-  --slate: #3C5070;
-  --slate-soft: #E1E7F1;
-  --urgent: #9E1B1B;
-  --urgent-soft: #FBE1DF;
-  --chip: #EEF1F3;
-  --display: "Rubik", "Segoe UI", "Arial Hebrew", Arial, sans-serif;
-  --body: "IBM Plex Sans Hebrew", "Segoe UI", "Arial Hebrew", Arial, sans-serif;
+  --apricot: #FCE9DC;   /* page */
+  --sheet: #FFF8F3;     /* reading surface */
+  --ink: #2A1F2D;       /* deep plum text */
+  --ink-soft: #4E3F4C;
+  --muted: #6B5A66;
+  --rule: #F1DACD;
+  --rose: #A8355C;      /* the few interactive bits */
+  --rose-soft: #F9DCE3;
+  --butter: #FBE7A1; --butter-ink: #5B4300;   /* changes what to do */
+  --mint: #D3EEDD;   --mint-ink: #23553C;     /* changes the state of things */
+  --lilac: #E6DEF7;  --lilac-ink: #45387A;    /* will matter for a while */
+  --blush: #F8DCD2;  --blush-ink: #74372A;    /* topic */
+  --alarm: #B4382A;  --alarm-ink: #FFFFFF;    /* urgent */
+  --display: "Fredoka", "Assistant", "Segoe UI", "Arial Hebrew", Arial, sans-serif;
+  --body: "Assistant", "Segoe UI", "Arial Hebrew", Arial, sans-serif;
+  color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0E1316; --surface: #172025; --ink: #EEF2F4; --ink-2: #C4CDD3; --muted: #95A3AC; --line: #26323A;
-    --accent: #6CC6B8; --accent-soft: #173431; --act: #F2BE6B; --act-soft: #3A2C14;
-    --slate: #A8BCDD; --slate-soft: #1E2838; --urgent: #FF8A80; --urgent-soft: #3D1A19; --chip: #1F2A30;
+    --apricot: #1F1720; --sheet: #2A2029; --ink: #F7ECE6; --ink-soft: #E3D3D9; --muted: #C2B0B8; --rule: #3B2E39;
+    --rose: #F29AB8; --rose-soft: #47283A;
+    --butter: #4A3B10; --butter-ink: #F7D978; --mint: #1F3A2C; --mint-ink: #A6E0BE;
+    --lilac: #2F2847; --lilac-ink: #CFC2F5; --blush: #3D2722; --blush-ink: #F2C3B3;
+    --alarm: #E46A55; --alarm-ink: #1F1720;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #0E1316; --surface: #172025; --ink: #EEF2F4; --ink-2: #C4CDD3; --muted: #95A3AC; --line: #26323A;
-  --accent: #6CC6B8; --accent-soft: #173431; --act: #F2BE6B; --act-soft: #3A2C14;
-  --slate: #A8BCDD; --slate-soft: #1E2838; --urgent: #FF8A80; --urgent-soft: #3D1A19; --chip: #1F2A30;
+  --apricot: #1F1720; --sheet: #2A2029; --ink: #F7ECE6; --ink-soft: #E3D3D9; --muted: #C2B0B8; --rule: #3B2E39;
+  --rose: #F29AB8; --rose-soft: #47283A;
+  --butter: #4A3B10; --butter-ink: #F7D978; --mint: #1F3A2C; --mint-ink: #A6E0BE;
+  --lilac: #2F2847; --lilac-ink: #CFC2F5; --blush: #3D2722; --blush-ink: #F2C3B3;
+  --alarm: #E46A55; --alarm-ink: #1F1720;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
-body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 18px; line-height: 1.7; -webkit-font-smoothing: antialiased; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--apricot); color: var(--ink); font-family: var(--body); font-size: 18px; line-height: 1.75; -webkit-font-smoothing: antialiased; }
 a { color: inherit; }
 button { font: inherit; color: inherit; }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+:focus-visible { outline: 2px solid var(--rose); outline-offset: 3px; border-radius: 6px; }
+[hidden] { display: none !important; }
 
-.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); }
-.bar-in { max-width: 720px; margin: 0 auto; padding-inline: 16px; padding-block: 12px 0; display: flex; flex-direction: column; gap: 10px; }
-.top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-.wordmark { font-family: var(--display); font-weight: 700; font-size: 1.7rem; line-height: 1.1; margin: 0; letter-spacing: -0.01em; }
-.status { display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--muted); font-variant-numeric: tabular-nums; }
-.dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); flex: none; }
-.status.live .dot { background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
-.status.stale .dot { background: var(--act); }
-.status.stale { color: var(--act); }
-.tabs { display: flex; gap: 4px; }
-.tab { border: 0; background: none; padding: 8px 12px 10px; font-size: 0.95rem; font-weight: 500; color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent; }
-.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink); }
-.tab .n { font-variant-numeric: tabular-nums; color: var(--muted); font-weight: 400; margin-inline-start: 4px; }
+/* The mark reads in Hebrew's direction: noise on the right settling into a calm line on the left. */
+.mark { width: 34px; height: 14px; flex: none; color: var(--rose); transform: scaleX(-1); }
 
-main { max-width: 720px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 64px; display: flex; flex-direction: column; gap: 14px; }
-.day { font-family: var(--display); font-weight: 500; font-size: 0.95rem; color: var(--muted); margin: 14px 4px 0; }
-.day:first-child { margin-top: 0; }
+/* Header: name, liveness, and the two views. Sticky but light. */
+.top { position: sticky; top: 0; z-index: 5; background: var(--apricot); padding-top: env(safe-area-inset-top, 0px); }
+.top-in { max-width: 680px; margin: 0 auto; padding-inline: 18px; padding-block: 12px 10px; display: flex; flex-direction: column; gap: 10px; }
+.brand { display: flex; align-items: center; gap: 10px; }
+.wordmark { font-family: var(--display); font-weight: 600; font-size: 1.55rem; line-height: 1; margin: 0; letter-spacing: -0.01em; }
+.status { margin-inline-start: auto; display: inline-flex; align-items: center; gap: 7px; font-size: 0.85rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.status.live .dot { background: #3E9B6C; }
+.status.stale { color: var(--alarm); }
+.status.stale .dot { background: var(--alarm); }
+.views { display: flex; gap: 4px; background: var(--sheet); border-radius: 999px; padding: 4px; align-self: flex-start; }
+.view { border: 0; background: none; border-radius: 999px; padding: 6px 16px; font-weight: 600; font-size: 0.95rem; color: var(--muted); cursor: pointer; }
+.view[aria-selected="true"] { background: var(--ink); color: var(--sheet); }
+.view .n { font-weight: 400; margin-inline-start: 6px; font-variant-numeric: tabular-nums; opacity: 0.8; }
 
-.story { background: var(--surface); border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--line); }
-.story.urgent { border-color: var(--urgent); box-shadow: 0 0 0 1px var(--urgent) inset; }
-.meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 0.8rem; }
-.time { font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ink-2); margin-inline-end: 4px; }
-.upd { color: var(--muted); }
-.pill { padding: 2px 9px; border-radius: 999px; font-weight: 500; line-height: 1.5; white-space: nowrap; }
-.pill.topic { background: var(--chip); color: var(--ink-2); }
-.pill.act { background: var(--act-soft); color: var(--act); }
-.pill.state { background: var(--accent-soft); color: var(--accent); }
-.pill.lasting { background: var(--slate-soft); color: var(--slate); }
-.pill.urgent { background: var(--urgent); color: var(--surface); font-weight: 600; }
-.pill.single { border: 1px dashed var(--line); color: var(--muted); }
-.story h3 { font-family: var(--display); font-weight: 600; font-size: 1.3rem; line-height: 1.4; margin: 0; text-wrap: balance; }
-.story p { margin: 0; color: var(--ink); }
-.todo { background: var(--act-soft); border-radius: 8px; padding: 10px 14px; font-size: 0.97rem; }
-.todo b { color: var(--act); margin-inline-end: 6px; }
-.foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 2px; }
-.srcs { display: flex; flex-wrap: wrap; gap: 6px; font-size: 0.82rem; }
-.src { text-decoration: none; padding: 2px 9px; border-radius: 6px; border: 1px solid var(--line); color: var(--ink-2); }
-.src:hover { border-color: var(--ink-2); }
-.fb { border: 1px solid var(--line); background: none; border-radius: 6px; padding: 2px 10px; font-size: 0.8rem; color: var(--muted); cursor: pointer; }
-.fb[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+main { max-width: 680px; margin: 0 auto; padding-inline: 14px; padding-block: 8px 40px; }
 
-.empty { background: var(--surface); border: 1px dashed var(--line); border-radius: 12px; padding: 28px 20px; text-align: center; color: var(--muted); }
-.empty b { display: block; color: var(--ink); font-family: var(--display); font-weight: 600; font-size: 1.15rem; margin-bottom: 4px; }
+/* The opening: a greeting and one calm sentence saying how much actually happened. */
+.hello { padding-inline: 6px; padding-block: 18px 22px; }
+.hello h2 { font-family: var(--display); font-weight: 500; font-size: 1.15rem; color: var(--muted); margin: 0; }
+.hello p { font-family: var(--display); font-weight: 600; font-size: 1.6rem; line-height: 1.3; margin: 2px 0 0; text-wrap: balance; }
 
-.cuts-head { display: flex; flex-direction: column; gap: 10px; }
-.cuts-head p { margin: 0; color: var(--ink-2); font-size: 0.95rem; }
-.cats { display: flex; flex-wrap: wrap; gap: 6px; }
-.cat { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 3px 12px; font-size: 0.85rem; cursor: pointer; font-variant-numeric: tabular-nums; }
-.cat[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
-.cuts { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
-.cut { padding: 12px 16px; border-top: 1px solid var(--line); display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; }
-.cut:first-child { border-top: 0; }
-.cut .t { font-size: 0.98rem; line-height: 1.5; min-width: 0; }
-.cut .t a { text-decoration: none; }
-.cut .t a:hover { text-decoration: underline; }
-.cut .why { grid-column: 1; font-size: 0.8rem; color: var(--muted); }
-.cut .fb { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
+.day { font-family: var(--display); font-weight: 600; font-size: 1.05rem; color: var(--ink-soft); margin: 26px 8px 10px; }
+.day:first-of-type { margin-top: 0; }
+.sheet { background: var(--sheet); border-radius: 22px; padding-inline: 20px; }
 
-footer { max-width: 720px; margin: 0 auto; padding-inline: 16px; padding-block: 0 40px; font-size: 0.8rem; color: var(--muted); display: flex; flex-direction: column; gap: 6px; }
-.health { display: flex; flex-wrap: wrap; gap: 4px 14px; font-variant-numeric: tabular-nums; }
-.health .bad { color: var(--urgent); }
-@media (max-width: 480px) {
-  body { font-size: 17px; }
-  .story { padding: 16px; }
-  .story h3 { font-size: 1.2rem; }
-  .wordmark { font-size: 1.5rem; }
-}
+.story { padding-block: 20px; display: flex; flex-direction: column; gap: 8px; }
+.story + .story { border-top: 1px solid var(--rule); }
+.story.urgent { margin-inline: -20px; padding-inline: 20px; background: var(--rose-soft); }
+.sheet > .story.urgent:first-child { border-radius: 22px 22px 0 0; }
+.sheet > .story.urgent:last-child { border-radius: 0 0 22px 22px; }
+.sheet > .story.urgent:only-child { border-radius: 22px; }
+.meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.time { font-weight: 700; font-size: 0.9rem; color: var(--ink-soft); font-variant-numeric: tabular-nums; margin-inline-end: 4px; }
+.pill { font-size: 0.8rem; font-weight: 600; line-height: 1.4; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+.pill.topic { background: var(--blush); color: var(--blush-ink); }
+.pill.act { background: var(--butter); color: var(--butter-ink); }
+.pill.state { background: var(--mint); color: var(--mint-ink); }
+.pill.lasting { background: var(--lilac); color: var(--lilac-ink); }
+.pill.urgent { background: var(--alarm); color: var(--alarm-ink); }
+.story h3 { font-family: var(--display); font-weight: 600; font-size: 1.32rem; line-height: 1.38; margin: 2px 0 0; text-wrap: balance; }
+.story p { margin: 0; }
+.todo { background: var(--butter); color: var(--butter-ink); border-radius: 14px; padding: 10px 14px; font-size: 1rem; }
+.todo b { margin-inline-end: 6px; }
+.byline { font-size: 0.88rem; color: var(--muted); }
+.byline a { color: var(--ink-soft); text-underline-offset: 3px; text-decoration-color: var(--rule); }
+.byline a:hover { text-decoration-color: currentColor; }
+.byline .upd { display: block; }
+
 @media (prefers-reduced-motion: no-preference) {
-  .story.fresh { animation: arrive 1.2s ease-out; }
-  @keyframes arrive { from { background: var(--accent-soft); } to { background: var(--surface); } }
+  .story.fresh { animation: settle 1.6s ease-out; }
+  @keyframes settle { from { background-color: var(--butter); } }
+}
+
+/* The ending: the feed is finite on purpose. */
+.end { text-align: center; padding-block: 44px 20px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.end .mark { width: 96px; height: 36px; margin-bottom: 6px; }
+.end strong { font-family: var(--display); font-weight: 600; font-size: 1.35rem; }
+.end p { margin: 0; color: var(--muted); max-width: 32ch; }
+.link-btn { border: 0; background: none; color: var(--rose); font-weight: 600; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; padding: 6px; }
+
+.empty { background: var(--sheet); border-radius: 22px; padding: 30px 22px; text-align: center; color: var(--muted); }
+.empty strong { display: block; color: var(--ink); font-family: var(--display); font-weight: 600; font-size: 1.2rem; margin-bottom: 4px; }
+
+/* What was filtered out, and why. */
+.cuts-intro { padding: 18px 6px 14px; color: var(--ink-soft); margin: 0; }
+.cats { display: flex; flex-wrap: wrap; gap: 6px; padding-inline: 2px; margin-bottom: 14px; }
+.cat { border: 0; border-radius: 999px; padding: 5px 12px; font-size: 0.85rem; font-weight: 600; cursor: pointer; background: var(--sheet); color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.cat.waiting { background: var(--lilac); color: var(--lilac-ink); }
+.cat[aria-pressed="true"] { background: var(--ink); color: var(--sheet); }
+.cut { padding-block: 14px; display: flex; flex-direction: column; gap: 2px; }
+.cut + .cut { border-top: 1px solid var(--rule); }
+.cut a { text-decoration: none; font-size: 1rem; line-height: 1.5; }
+.cut a:hover { text-decoration: underline; }
+.cut .why { font-size: 0.82rem; color: var(--muted); }
+.cut .why b { font-weight: 600; color: var(--ink-soft); }
+
+footer { max-width: 680px; margin: 0 auto; padding-inline: 20px; padding-block: 8px calc(36px + env(safe-area-inset-bottom, 0px)); color: var(--muted); font-size: 0.85rem; display: flex; flex-direction: column; gap: 10px; }
+.outlets { display: flex; flex-wrap: wrap; gap: 4px 14px; font-variant-numeric: tabular-nums; }
+.outlets .bad { color: var(--alarm); }
+.install { background: var(--sheet); border-radius: 16px; padding: 12px 14px; color: var(--ink-soft); display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.install button { border: 0; background: var(--ink); color: var(--sheet); border-radius: 999px; padding: 6px 14px; font-weight: 600; cursor: pointer; }
+
+@media (min-width: 720px) {
+  body { font-size: 19px; }
+  .hello p { font-size: 1.85rem; }
+  .story h3 { font-size: 1.42rem; }
+  .sheet { padding-inline: 28px; }
+  .story.urgent { margin-inline: -28px; padding-inline: 28px; }
 }
 </style>
-
-<div dir="rtl" lang="he">
-  <div class="bar">
-    <div class="bar-in">
-      <div class="top">
-        <h1 class="wordmark">בלי רעש</h1>
-        <span class="status" id="status"><span class="dot"></span><span id="status-text">מתחבר…</span></span>
-      </div>
-      <div class="tabs" role="tablist">
-        <button class="tab" role="tab" id="tab-news" aria-selected="true" aria-controls="view">חדשות<span class="n" id="n-news"></span></button>
-        <button class="tab" role="tab" id="tab-cuts" aria-selected="false" aria-controls="view">מה סוננו<span class="n" id="n-cuts"></span></button>
-      </div>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="settle" viewBox="0 0 96 36"><path d="M2 18 C8 4, 14 4, 18 18 S28 32, 32 18 S40 8, 44 18 S50 26, 54 18 S62 18, 66 18 L94 18" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+<header class="top">
+  <div class="top-in">
+    <div class="brand">
+      <svg class="mark" aria-hidden="true"><use href="#settle"/></svg>
+      <h1 class="wordmark">בלי רעש</h1>
+      <span class="status" id="status"><span class="dot"></span><span id="status-text">מתחבר…</span></span>
+    </div>
+    <div class="views" role="tablist" aria-label="תצוגה">
+      <button class="view" role="tab" id="tab-news" aria-selected="true" aria-controls="view">חדשות<span class="n" id="n-news"></span></button>
+      <button class="view" role="tab" id="tab-cuts" aria-selected="false" aria-controls="view">מה סוננו<span class="n" id="n-cuts"></span></button>
     </div>
   </div>
-  <main id="view" role="tabpanel">
-    <div class="empty"><b>ממתין לעדכון הראשון</b>הדף מתעדכן לבד כשמגיעות ידיעות חדשות.</div>
-  </main>
-  <footer id="foot"></footer>
-</div>
+</header>
+<main id="view" role="tabpanel">
+  <div class="empty"><strong>טוען את הידיעות</strong>רגע אחד.</div>
+</main>
+<footer id="foot"></footer>
 
 <script>
-const IMPACT = { act: "משנה מה לעשות", state: "משנה את מצב המדינה", lasting: "ישפיע לאורך זמן" };
+const IMPACT = { act: "משנה מה לעשות", state: "משנה את מצב הדברים", lasting: "ישפיע לאורך זמן" };
+const WAITING = "ממתין למקור נוסף";
 const TZ = "Asia/Jerusalem";
-const hm = new Intl.DateTimeFormat("he-IL", { timeZone: TZ, hour: "2-digit", minute: "2-digit", hour12: false });
-const dayKey = new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" });
-const dayName = new Intl.DateTimeFormat("he-IL", { timeZone: TZ, weekday: "long", day: "numeric", month: "numeric" });
+const hmFmt = new Intl.DateTimeFormat("he-IL", { timeZone: TZ, hour: "2-digit", minute: "2-digit", hour12: false });
+const dayKeyFmt = new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" });
+const dayNameFmt = new Intl.DateTimeFormat("he-IL", { timeZone: TZ, weekday: "long", day: "numeric", month: "long" });
+const hourFmt = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, hour: "numeric", hour12: false });
 
-const state = { feed: null, filtered: null, tab: "news", cat: null, votes: { stories: {}, filtered: {} }, canVote: false, seen: new Set(), fresh: new Set(), first: true };
-let votesRef = null, votesExist = false, writing = Promise.resolve(), perms = null, dbState = null;
-const withTimeout = (p, ms) => Promise.race([p, new Promise((_, no) => setTimeout(() => no({ code: "timeout" }), ms))]);
-
+const state = { feed: null, filtered: null, tab: "news", cat: null, seen: new Set(), fresh: new Set(), first: true, failed: false, installEvent: null };
 try { const t = localStorage.getItem("bli-tab"); if (t === "news" || t === "cuts") state.tab = t; } catch (e) {}
 
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const safeUrl = u => /^https?:\/\//.test(u || "") ? u : "#";
+const fmt = (f, iso) => { try { return f.format(new Date(iso)); } catch (e) { return ""; } };
+const dayKey = iso => fmt(dayKeyFmt, iso);
 
-const fmt = iso => { try { return hm.format(new Date(iso)); } catch (e) { return ""; } };
 function ago(iso) {
   const m = Math.round((Date.now() - new Date(iso)) / 60000);
   if (!Number.isFinite(m)) return "";
@@ -161,168 +206,170 @@ function ago(iso) {
   return h === 1 ? "לפני שעה" : h === 2 ? "לפני שעתיים" : `לפני ${h} שעות`;
 }
 function dayLabel(iso) {
-  let k;
-  try { k = dayKey.format(new Date(iso)); } catch (e) { return ""; }
-  const today = dayKey.format(new Date());
-  const y = dayKey.format(new Date(Date.now() - 864e5));
-  return k === today ? "היום" : k === y ? "אתמול" : dayName.format(new Date(iso));
+  const k = dayKey(iso);
+  if (k === dayKey(new Date().toISOString())) return "היום";
+  if (k === dayKey(new Date(Date.now() - 864e5).toISOString())) return "אתמול";
+  return fmt(dayNameFmt, iso);
 }
+function greeting() {
+  const h = Number(hourFmt.format(new Date()));
+  return h >= 5 && h < 12 ? "בוקר טוב" : h < 17 && h >= 12 ? "צהריים טובים" : h >= 17 && h < 22 ? "ערב טוב" : "לילה טוב";
+}
+function countLine(n) {
+  if (n === 0) return "ב-24 השעות האחרונות לא קרה משהו שחשוב לדעת.";
+  if (n === 1) return "דבר אחד חשוב קרה ב-24 השעות האחרונות.";
+  return `${n} דברים חשובים קרו ב-24 השעות האחרונות.`;
+}
+const outletList = s => {
+  const seen = new Map();
+  for (const x of s.sources || []) if (!seen.has(x.name)) seen.set(x.name, x.url);
+  return [...seen];
+};
 
 function storyHtml(s) {
-  const srcs = [];
-  const names = new Set();
-  for (const x of s.sources || []) if (!names.has(x.name)) { names.add(x.name); srcs.push(x); }
   const pills = [`<span class="pill topic">${esc(s.topic)}</span>`]
     .concat((s.impact || []).filter(k => IMPACT[k]).map(k => `<span class="pill ${k}">${IMPACT[k]}</span>`));
   if (s.urgent) pills.unshift(`<span class="pill urgent">דחוף</span>`);
-  if (names.size === 1) pills.push(`<span class="pill single" title="רק כלי תקשורת אחד דיווח על זה">מקור אחד</span>`);
-  const upd = s.updates > 0 ? `<span class="upd">עודכן · פורסם לראשונה ${fmt(s.created)}</span>` : "";
+  const links = outletList(s).map(([name, url]) => `<a href="${esc(safeUrl(url))}" target="_blank" rel="noopener"><bdi>${esc(name)}</bdi></a>`).join(", ");
+  const upd = s.updates > 0 ? `<span class="upd">עודכן. פורסם לראשונה ב-${fmt(hmFmt, s.created)}</span>` : "";
   const fresh = state.fresh.has(s.id + s.updated) ? " fresh" : "";
-  const vote = state.canVote ? `<button class="fb" data-kind="stories" data-id="${esc(s.id)}" aria-pressed="${state.votes.stories[s.id] === "drop"}">לא היה צריך להופיע</button>` : "";
   return `<article class="story${s.urgent ? " urgent" : ""}${fresh}">
-    <div class="meta"><span class="time">${fmt(s.updated)}</span>${pills.join("")}${upd}</div>
+    <div class="meta"><span class="time">${fmt(hmFmt, s.updated)}</span>${pills.join("")}</div>
     <h3>${esc(s.headline)}</h3>
     <p>${esc(s.summary)}</p>
-    ${s.action ? `<div class="todo"><b>מה לעשות</b>${esc(s.action)}</div>` : ""}
-    <div class="foot"><div class="srcs">${srcs.map(x => `<a class="src" href="${esc(safeUrl(x.url))}" target="_blank" rel="noopener">${esc(x.name)}</a>`).join("")}</div>${vote}</div>
+    ${s.action ? `<div class="todo"><b>מה לעשות:</b>${esc(s.action)}</div>` : ""}
+    <div class="byline">דיווחו: ${links}${upd}</div>
   </article>`;
 }
 
 function renderNews() {
-  const stories = [...(state.feed?.stories || [])].sort((a, b) => b.updated.localeCompare(a.updated));
-  if (!stories.length) return `<div class="empty"><b>${state.feed ? "אין עדיין ידיעות שעברו את המבחן" : "ממתין לעדכון הראשון"}</b>הדף מתעדכן לבד כשמגיעות ידיעות חדשות.</div>`;
-  let out = "", last = null;
-  for (const s of stories) {
-    const d = dayLabel(s.updated);
-    if (d !== last) { out += `<h2 class="day">${esc(d)}</h2>`; last = d; }
-    out += storyHtml(s);
+  const stories = [...(state.feed?.stories || [])].sort((a, b) => String(b.updated).localeCompare(String(a.updated)));
+  const dayAgo = Date.now() - 864e5;
+  const todayCount = stories.filter(s => new Date(s.updated).getTime() >= dayAgo).length;
+  const hidden = state.filtered?.items?.length || 0;
+  let out = `<section class="hello"><h2>${greeting()}.</h2><p>${countLine(todayCount)}</p></section>`;
+  if (!stories.length) {
+    return out + `<div class="empty"><strong>${state.failed ? "אין חיבור כרגע" : "עוד אין ידיעות"}</strong>${state.failed ? "נסו שוב בעוד רגע. כשיש חיבור הדף מתעדכן לבד." : "ידיעות שדווחו בשני כלי תקשורת לפחות יופיעו כאן."}</div>`;
   }
+  const byDay = new Map();
+  for (const s of stories) { const d = dayLabel(s.updated); if (!byDay.has(d)) byDay.set(d, []); byDay.get(d).push(s); }
+  for (const [d, list] of byDay) out += `<h2 class="day">${esc(d)}</h2><div class="sheet">${list.map(storyHtml).join("")}</div>`;
+  out += `<section class="end">
+    <svg class="mark" aria-hidden="true"><use href="#settle"/></svg>
+    <strong>זהו, ראית את כל מה שחשוב.</strong>
+    <p>${hidden ? `${hidden.toLocaleString("he-IL")} ידיעות אחרות לא עברו את המבחן.` : "כל השאר לא עבר את המבחן."}</p>
+    <button class="link-btn" data-goto="cuts">מה סוננו ולמה</button>
+  </section>`;
   return out;
 }
 
 function renderCuts() {
-  const items = [...(state.filtered?.items || [])].sort((a, b) => b.t.localeCompare(a.t));
-  if (!items.length) return `<div class="empty"><b>עוד לא סונן כלום</b>כאן יופיע כל מה שנחתך, עם הסיבה.</div>`;
-  const counts = {};
-  for (const it of items) counts[it.category] = (counts[it.category] || 0) + 1;
-  const cats = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  const items = [...(state.filtered?.items || [])].sort((a, b) => String(b.t).localeCompare(String(a.t)));
+  if (!items.length) return `<p class="cuts-intro">עוד לא סונן כלום.</p>`;
+  const counts = new Map();
+  for (const it of items) counts.set(it.category, (counts.get(it.category) || 0) + 1);
+  const cats = [...counts].sort((a, b) => (a[0] === WAITING ? -1 : b[0] === WAITING ? 1 : b[1] - a[1]));
   const shown = state.cat ? items.filter(i => i.category === state.cat) : items;
-  return `<div class="cuts-head">
-      <p>מה שנחתך לאחרונה, ולמה. ראיתם משהו שהיה צריך להופיע? סמנו אותו, וכך הכללים ישתפרו.</p>
-      <div class="cats">${cats.map(([c, n]) => `<button class="cat" data-cat="${esc(c)}" aria-pressed="${state.cat === c}">${esc(c)} · ${n}</button>`).join("")}</div>
-    </div>
-    <ul class="cuts">${shown.map(it => `<li class="cut">
-      <span class="t"><a href="${esc(safeUrl(it.url))}" target="_blank" rel="noopener">${esc(it.title)}</a></span>
-      <span class="why">${fmt(it.t)} · ${esc(it.source)} · ${esc(it.category)}${it.reason ? " · " + esc(it.reason) : ""}</span>
-      ${state.canVote ? `<button class="fb" data-kind="filtered" data-id="${esc(it.id)}" aria-pressed="${state.votes.filtered[it.id] === "keep"}">היה צריך להופיע</button>` : ""}
-    </li>`).join("")}</ul>`;
+  return `<p class="cuts-intro">כל מה שנחתך ביממה האחרונה, ולמה. ידיעה שדווחה רק בכלי תקשורת אחד מחכה כאן עד שמקור נוסף מאשר אותה.</p>
+    <div class="cats">${cats.map(([c, n]) => `<button class="cat${c === WAITING ? " waiting" : ""}" data-cat="${esc(c)}" aria-pressed="${state.cat === c}">${esc(c)} (${n})</button>`).join("")}</div>
+    <div class="sheet">${shown.map(it => `<div class="cut">
+      <a href="${esc(safeUrl(it.url))}" target="_blank" rel="noopener">${esc(it.title)}</a>
+      <span class="why"><bdi>${fmt(hmFmt, it.t)}</bdi>&rlm;, <bdi>${esc(it.source)}</bdi>&rlm;. <b>${esc(it.category)}</b>${it.reason ? `: <bdi>${esc(it.reason)}</bdi>` : ""}</span>
+    </div>`).join("")}</div>`;
 }
 
 function renderStatus() {
   const el = document.getElementById("status"), txt = document.getElementById("status-text");
-  if (!state.feed?.updated) { el.className = "status"; txt.textContent = state.dbMissing ? "לא זמין בתצוגה הזו" : "ממתין לעדכון"; return; }
+  if (!state.feed?.updated) { el.className = "status"; txt.textContent = state.failed ? "אין חיבור" : "מתחבר…"; return; }
   const mins = (Date.now() - new Date(state.feed.updated)) / 60000;
-  el.className = "status " + (mins > 45 ? "stale" : "live");
-  txt.textContent = (mins > 45 ? "המערכת לא פעילה · נבדק " : "חי · נבדק ") + ago(state.feed.updated);
+  const stale = mins > 45;
+  el.className = "status " + (stale ? "stale" : "live");
+  txt.textContent = (stale ? "לא התעדכן " : "נבדק ") + ago(state.feed.updated);
 }
 
 function renderFoot() {
   const h = state.feed?.health || [];
-  if (!h.length) { document.getElementById("foot").innerHTML = ""; return; }
-  document.getElementById("foot").innerHTML = `${state.voteMsg ? `<div class="health"><span class="bad">${esc(state.voteMsg)}</span></div>` : ""}<div>מקורות: ${h.length} אתרים, נבדקים כל כמה דקות.</div>
-    <div class="health">${h.map(x => `<span class="${x.ok ? "" : "bad"}" title="${esc(x.error || "")}">${esc(x.source)} ${x.ok ? (x.newest ? "· " + ago(x.newest) : "") : "· תקלה"}</span>`).join("")}</div>`;
+  const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+  let html = "";
+  if (h.length) {
+    html += `<div>הידיעות נאספות מ-${h.length} כלי תקשורת ונבדקות כל כמה דקות. ידיעה מופיעה רק כשלפחות שניים מהם דיווחו עליה.</div>
+      <div class="outlets">${h.map(x => `<span class="${x.ok ? "" : "bad"}" title="${esc(x.error || "")}"><bdi>${esc(x.source)}</bdi>${x.ok ? (x.newest ? ", " + ago(x.newest) : "") : ", תקלה"}</span>`).join("")}</div>`;
+  }
+  if (!standalone) {
+    html += state.installEvent
+      ? `<div class="install">אפשר להתקין את בלי רעש כאפליקציה בטלפון. <button id="install">התקנה</button></div>`
+      : `<div class="install">רוצים את זה כאפליקציה? בתפריט של הדפדפן בטלפון בוחרים "הוספה למסך הבית".</div>`;
+  }
+  document.getElementById("foot").innerHTML = html;
 }
 
 function render() {
-  document.getElementById("n-news").textContent = state.feed?.stories?.length ? state.feed.stories.length : "";
-  document.getElementById("n-cuts").textContent = state.filtered?.items?.length ? state.filtered.items.length : "";
+  const nNews = state.feed?.stories?.length || 0, nCuts = state.filtered?.items?.length || 0;
+  document.getElementById("n-news").textContent = nNews ? nNews : "";
+  document.getElementById("n-cuts").textContent = nCuts ? nCuts.toLocaleString("he-IL") : "";
   for (const t of ["news", "cuts"]) document.getElementById("tab-" + t).setAttribute("aria-selected", String(state.tab === t));
   document.getElementById("view").innerHTML = state.tab === "news" ? renderNews() : renderCuts();
   renderStatus();
   renderFoot();
 }
 
+function setTab(t) {
+  state.tab = t;
+  try { localStorage.setItem("bli-tab", t); } catch (e) {}
+  render();
+  window.scrollTo(0, 0);
+}
+
 document.addEventListener("click", e => {
-  const tab = e.target.closest(".tab");
-  if (tab) {
-    state.tab = tab.id === "tab-cuts" ? "cuts" : "news";
-    try { localStorage.setItem("bli-tab", state.tab); } catch (err) {}
-    render(); window.scrollTo(0, 0); return;
-  }
+  const tab = e.target.closest(".view");
+  if (tab) { setTab(tab.id === "tab-cuts" ? "cuts" : "news"); return; }
+  const go = e.target.closest("[data-goto]");
+  if (go) { setTab(go.dataset.goto); return; }
   const cat = e.target.closest(".cat");
   if (cat) { state.cat = state.cat === cat.dataset.cat ? null : cat.dataset.cat; render(); return; }
-  const fb = e.target.closest(".fb");
-  if (fb && votesRef) {
-    const { kind, id } = fb.dataset, mark = kind === "stories" ? "drop" : "keep";
-    const bag = state.votes[kind] = { ...(state.votes[kind] || {}) };
-    bag[id] = bag[id] === mark ? "none" : mark;
-    fb.setAttribute("aria-pressed", String(bag[id] === mark));
-    // Merge just this vote, so another tab or device doesn't overwrite earlier ones.
-    const patch = { [kind]: { [id]: bag[id] }, updated: new Date().toISOString() };
-    // The database asks permission on first use; ask inside this click so the dialog can show.
-    const permit = perms && dbState === "prompt" ? perms.request(["db"]).then(r => { dbState = r.db; }) : Promise.resolve();
-    writing = writing.then(() => permit).then(async () => {
-      if (votesExist) await withTimeout(votesRef.update(patch), 10000);
-      else { await withTimeout(votesRef.set({ stories: {}, filtered: {}, ...patch }), 10000); votesExist = true; }
-      state.voteMsg = "";
-    }).catch(err => {
-      if (err?.code === "invalid_argument") state.canVote = false;
-      state.voteMsg = dbState === "denied" ? "הסימונים חסומים: אפשרו שמירה בתפריט ההרשאות של הדף." : "הסימון האחרון לא נשמר. נסו שוב.";
-      render();
-    });
+  if (e.target.closest("#install") && state.installEvent) {
+    state.installEvent.prompt();
+    state.installEvent.userChoice.finally(() => { state.installEvent = null; renderFoot(); });
   }
 });
 
-setInterval(() => { renderStatus(); renderFoot(); }, 30000);
-
 function setFeed(feed) {
   state.feed = feed;
-  // Highlight what arrived since the last delivery; the set lasts until the next feed update.
-  const keys = (state.feed?.stories || []).map(x => x.id + x.updated);
+  // Highlight what arrived since the last refresh; it lasts until the next one.
+  const keys = (feed?.stories || []).map(x => x.id + x.updated);
   state.fresh = state.first ? new Set() : new Set(keys.filter(k => !state.seen.has(k)));
   keys.forEach(k => state.seen.add(k));
-  if (state.feed) state.first = false;
-  render();
+  if (feed) state.first = false;
 }
 
-// Outside claude.ai (the public site) the feed comes from files next to the page, re-read every minute.
-async function poll() {
-  const pull = async name => {
-    const r = await fetch(name + "?t=" + Date.now(), { cache: "no-store" });
-    if (!r.ok) throw new Error(String(r.status));
-    return r.json();
-  };
+async function pull(name) {
+  const r = await fetch(name + "?t=" + Date.now(), { cache: "no-store" });
+  if (!r.ok) throw new Error(String(r.status));
+  return r.json();
+}
+
+async function refresh() {
+  let changed = false;
   try {
     const feed = await pull("feed.json");
-    if (feed.updated !== state.feed?.updated) setFeed(feed);
-  } catch (e) { if (!state.feed) { state.dbMissing = true; render(); } }
+    state.failed = false;
+    if (feed.updated !== state.feed?.updated) { setFeed(feed); changed = true; }
+  } catch (e) { if (!state.feed) { state.failed = true; changed = true; } }
   try {
     const f = await pull("filtered.json");
-    if (f.updated !== state.filtered?.updated) { state.filtered = f; render(); }
+    if (f.updated !== state.filtered?.updated) { state.filtered = f; changed = true; }
   } catch (e) {}
+  if (changed) render(); else { renderStatus(); }
 }
 
-(async () => {
-  const db = window.claude?.use ? await window.claude.use("db") : null;
-  if (!db) { poll(); setInterval(poll, 60000); return; }
-  db.doc("feed/latest").onSnapshot(s => setFeed(s.exists ? s.data() : null), () => {});
-  db.doc("feed/filtered").onSnapshot(s => { state.filtered = s.exists ? s.data() : null; render(); }, () => {});
-  const [user, p] = await Promise.all([window.claude.use("user"), window.claude.use("permissions")]);
-  perms = p;
-  dbState = p ? await p.state("db") : "granted";
-  const uid = user ? await user.id() : null;
-  if (!uid) return;
-  try {
-    votesRef = db.doc("votes/" + uid);
-    const v = await votesRef.get();
-    votesExist = v.exists;
-    if (v.exists) {
-      const d = v.data();
-      state.votes = { stories: { ...(d.stories || {}) }, filtered: { ...(d.filtered || {}) } };
-    }
-    state.canVote = user.can ? (await user.can("data.write")) !== false : true;
-    render();
-  } catch (e) { votesRef = null; }
-})();
+window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); state.installEvent = e; renderFoot(); });
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") refresh(); });
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+
 render();
+refresh();
+setInterval(refresh, 60000);
+setInterval(renderStatus, 30000);
 </script>
+</body>
+</html>

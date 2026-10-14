@@ -33,12 +33,26 @@ def _size(doc):
     return len(json.dumps(doc, ensure_ascii=False).encode())
 
 
+MIN_OUTLETS = 2   # a story is shown only once at least this many different outlets reported it (Eyal's rule)
+WAITING = "ממתין למקור נוסף"
+
+
+def outlets(story):
+    return {x["name"] for x in story["sources"]}
+
+
 def build(con, health):
     stories = [store.story_dict(r) for r in con.execute(
         "SELECT * FROM stories WHERE updated >= ? ORDER BY updated DESC LIMIT 200", (_ago(FEED_HOURS, 30),))]
     for s in stories:
         s.pop("touched", None)
-    feed = {"updated": store.now_iso(), "stories": stories, "health": health}
+    shown = [s for s in stories if len(outlets(s)) >= MIN_OUTLETS]
+    # Single-outlet stories wait in the cut list until a second outlet reports them.
+    waiting = [{"id": "w" + s["id"], "t": s["updated"], "source": next(iter(outlets(s)), ""), "title": s["headline"],
+                "url": s["sources"][0]["url"] if s["sources"] else "", "category": WAITING,
+                "reason": f"מקור יחיד עד עכשיו: {next(iter(outlets(s)), '')}"}
+               for s in stories if len(outlets(s)) < MIN_OUTLETS and s["updated"] >= _ago(CUTS_HOURS, 30)]
+    feed = {"updated": store.now_iso(), "stories": shown, "health": health}
     while _size(feed) > MAX_DOC_BYTES and feed["stories"]:
         feed["stories"].pop()
 
@@ -48,7 +62,7 @@ def build(con, health):
         cuts.append({"id": hashlib.sha1(r["url"].encode()).hexdigest()[:12], "t": store.item_time(r),
                      "source": r["source"], "title": r["title"][:160], "url": r["url"],
                      "category": r["cut_category"] or "אחר", "reason": (r["cut_reason"] or "")[:80]})
-    filtered = {"updated": store.now_iso(), "items": cuts}
+    filtered = {"updated": store.now_iso(), "items": waiting + cuts}
     while _size(filtered) > MAX_DOC_BYTES and filtered["items"]:
         del filtered["items"][-25:]
     return feed, filtered

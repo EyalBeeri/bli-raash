@@ -25,10 +25,8 @@ HEARTBEAT_MINUTES = 20  # deploy at least this often, so the page can show the s
 # These outlets refuse every request from data centers (checked 2026-10-14); we respect that and don't ask.
 CLOUD_SKIP = {"דבר", "Times of Israel"}
 
-SKELETON = ('<!doctype html><html lang="he"><head><meta charset="utf-8">'
-            '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
-            '<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>'
-            '</head><body>{page}</body></html>')
+PAGE = ROOT / "page" / "index.html"
+STATIC = ROOT / "page" / "static"   # manifest, service worker, icons: the installable app
 
 
 def log(msg):
@@ -66,8 +64,11 @@ def main():
         log(f"still waiting for the editor: {waiting} items")
 
     feed, filtered = publish.build(con, publish.health_from_db(con, health))
-    digest = hashlib.sha1(json.dumps([feed["stories"], filtered["items"]], ensure_ascii=False,
-                                     sort_keys=True).encode()).hexdigest()
+    # Content plus the page's own files, so a new design deploys on the next run too.
+    h = hashlib.sha1(json.dumps([feed["stories"], filtered["items"]], ensure_ascii=False, sort_keys=True).encode())
+    for f in [PAGE] + sorted(p for p in STATIC.rglob("*") if p.is_file()):
+        h.update(f.read_bytes())
+    digest = h.hexdigest()
     last = store.get_meta(con, "site_deployed_at")
     due = not last or datetime.now(timezone.utc) - datetime.fromisoformat(last) > timedelta(minutes=HEARTBEAT_MINUTES)
     deploy = digest != store.get_meta(con, "site_digest") or due
@@ -76,8 +77,8 @@ def main():
     SITE.mkdir()
     (SITE / "feed.json").write_text(json.dumps(feed, ensure_ascii=False), encoding="utf-8")
     (SITE / "filtered.json").write_text(json.dumps(filtered, ensure_ascii=False), encoding="utf-8")
-    page = (ROOT / "page" / "index.html").read_text(encoding="utf-8")
-    (SITE / "index.html").write_text(SKELETON.replace("{page}", page), encoding="utf-8")
+    shutil.copy(PAGE, SITE / "index.html")
+    shutil.copytree(STATIC, SITE, dirs_exist_ok=True)
     if deploy:
         store.set_meta(con, "site_digest", digest)
         store.set_meta(con, "site_deployed_at", store.now_iso())

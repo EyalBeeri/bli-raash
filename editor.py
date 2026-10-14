@@ -236,8 +236,12 @@ def run_once(con, log=print):
                             (w["headline"], w["summary"], w["action"], w["topic"], json.dumps(w["impact"]),
                              int(w["urgent"]), upd, store.now_iso(), json.dumps(srcs, ensure_ascii=False), key))
             else:                # attach: same facts, another outlet
-                con.execute("UPDATE stories SET sources=?, touched=? WHERE id=?",
-                            (json.dumps(srcs, ensure_ascii=False), store.now_iso(), key))
+                # A story becomes visible once a second outlet confirms it; show it at the confirmation time.
+                before = {x["name"] for x in s["sources"]}
+                after = {x["name"] for x in srcs}
+                upd = max(latest, s["updated"]) if len(before) < 2 <= len(after) else s["updated"]
+                con.execute("UPDATE stories SET sources=?, touched=?, updated=? WHERE id=?",
+                            (json.dumps(srcs, ensure_ascii=False), store.now_iso(), upd, key))
             sid = key
         else:
             w = written[key]
