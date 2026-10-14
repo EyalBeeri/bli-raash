@@ -10,6 +10,8 @@ import store
 
 ROOT = Path(__file__).parent
 MODEL = "sonnet"
+TRIAGE_MODEL = "haiku"  # cheap first pass: drops only the obvious, so the editor sees real candidates
+FULL_CONTEXT_HOURS = 12  # older stories are shown to the editor by headline only
 MAX_BATCH = 60          # new items per call; halved after each failed attempt
 MAX_ATTEMPTS = 3        # an item the editor fails on this many times is dropped
 CONTEXT_HOURS = 48      # existing stories shown to the editor (same window as the page)
@@ -69,10 +71,46 @@ def _il(iso):
 UNCONFIRMED = "השערות ודיווחים לא מאומתים"
 
 
+TRIAGE_SYSTEM = """You pre-screen raw news items for "בלי רעש", a calm Hebrew news feed for Israeli readers. A stronger editor decides afterwards; your only job is to remove items that obviously do not belong, to save its time.
+
+Mark an item "drop" ONLY when it plainly is one of: sports; culture, TV, celebrities, gossip; lifestyle, food, travel, consumer tips; horoscope; sponsored content; opinion columns, analysis and interviews; daily election-campaign news (polls, attacks between politicians, candidates joining or leaving lists, campaign ads); a single crime, accident or personal tragedy with no instruction to the public; routine foreign politics, crime abroad or curiosities; business news about a single company.
+
+Everything else is "keep": government and court decisions, security events, the economy, safety instructions, significant world events, anything that might relate to one of the existing stories, and anything you are not sure about. When in doubt, keep.
+
+For each "drop" give cut_category (one of the listed categories) and cut_reason (Hebrew, at most 8 words)."""
+
+TRIAGE_SCHEMA = {
+    "type": "object",
+    "properties": {"items": {"type": "array", "items": {"type": "object", "properties": {
+        "i": {"type": "integer"},
+        "decision": {"type": "string", "enum": ["keep", "drop"]},
+        "cut_category": {"type": "string", "enum": CUT_CATEGORIES},
+        "cut_reason": {"type": "string"},
+    }, "required": ["i", "decision"]}}},
+    "required": ["items"],
+}
+
+
+def triage(stories, items):
+    """Returns ({index: (cut_category, cut_reason)} for obvious drops, cost)."""
+    lines = ["EXISTING STORY HEADLINES:"] + [f"- {s['headline']}" for s in stories] + ["", "NEW ITEMS (i | outlet | title | summary):"]
+    lines += [f"{i} | {it['source']} | {it['title']} | {(it['summary'] or '')[:160]}" for i, it in enumerate(items)]
+    out, cost = _claude_json(TRIAGE_MODEL, TRIAGE_SYSTEM, "\n".join(lines), TRIAGE_SCHEMA,
+                             "Pre-screen the new items according to your instructions.")
+    drops = {}
+    for d in out["items"]:
+        i = d.get("i")
+        if isinstance(i, int) and 0 <= i < len(items) and d.get("decision") == "drop":
+            drops[i] = (d.get("cut_category") or "אחר", d.get("cut_reason") or "")
+    return drops, cost
+
+
 def build_input(stories, items, unconfirmed=()):
-    lines = ["EXISTING STORIES IN THE FEED (id | last update | headline | summary):"]
+    lines = ["EXISTING STORIES IN THE FEED (id | last update | headline | summary; older stories by headline only):"]
+    recent = (datetime.now(timezone.utc) - timedelta(hours=FULL_CONTEXT_HOURS)).isoformat(timespec="seconds")
     for s in stories:
-        lines.append(f"{s['id']} | {_il(s['updated'])} | {s['headline']} | {s['summary']}")
+        tail = f" | {s['summary']}" if s["updated"] >= recent else ""
+        lines.append(f"{s['id']} | {_il(s['updated'])} | {s['headline']}{tail}")
     if not stories:
         lines.append("(none yet)")
     if unconfirmed:
@@ -89,9 +127,12 @@ def build_input(stories, items, unconfirmed=()):
 
 def call_claude(user_input):
     system = SYSTEM + (ROOT / "rules.md").read_text(encoding="utf-8")
-    cmd = ["claude", "-p", "Process the new items according to your instructions.",
-           "--model", MODEL, "--tools", "", "--system-prompt", system,
-           "--json-schema", json.dumps(SCHEMA, ensure_ascii=False),
+    return _claude_json(MODEL, system, user_input, SCHEMA, "Process the new items according to your instructions.")
+
+
+def _claude_json(model, system, user_input, schema, prompt):
+    cmd = ["claude", "-p", prompt, "--model", model, "--tools", "", "--system-prompt", system,
+           "--json-schema", json.dumps(schema, ensure_ascii=False),
            "--output-format", "json", "--no-session-persistence"]
     r = subprocess.run(cmd, input=user_input, capture_output=True, text=True, encoding="utf-8", timeout=900)
     try:
@@ -121,10 +162,26 @@ def run_once(con, log=print):
         (UNCONFIRMED, (datetime.now(timezone.utc) - timedelta(hours=12)).isoformat(timespec="seconds"))).fetchall()
 
     try:
+        drops, triage_cost = triage(stories, items)
+    except Exception as e:  # the first pass is an optimization; without it the editor sees everything
+        drops, triage_cost = {}, 0
+        log(f"triage failed, editor sees all items: {type(e).__name__}: {str(e)[:120]}")
+    for i, (cat, reason) in drops.items():
+        con.execute("UPDATE items SET status='cut', cut_category=?, cut_reason=?, processed_at=? WHERE url=?",
+                    (cat, reason, store.now_iso(), items[i]["url"]))
+    total = len(items)
+    items = [it for i, it in enumerate(items) if i not in drops]
+    if not items:
+        con.commit()
+        log(f"triage: {total} items, all dropped; cost ${triage_cost or 0:.3f}")
+        return total
+
+    try:
         result, cost = call_claude(build_input(stories, items, unconfirmed))
     except Exception:
         _note_attempt(con, items)
         raise
+    cost = (cost or 0) + (triage_cost or 0)
     written = {s["key"]: s for s in result["stories"]}
     ts = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
     key_to_id, members = {}, {}
@@ -191,7 +248,7 @@ def run_once(con, log=print):
     # Items the editor skipped or mis-referenced get retried, then dropped.
     _note_attempt(con, [it for i, it in enumerate(items) if i not in decided])
     n_story = sum(len(v) for v in members.values())
-    log(f"editor: {len(items)} items -> {n_story} in stories, {len(decided) - n_story} cut, "
+    log(f"editor: {total} items, {len(drops)} dropped by triage; {len(items)} edited -> {n_story} in stories, {len(decided) - n_story} cut, "
         f"{len(items) - len(decided)} undecided; {len(written)} stories written; cost ${cost or 0:.3f}")
     return len(items)
 
