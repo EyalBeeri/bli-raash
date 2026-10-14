@@ -20,7 +20,7 @@ ROOT = Path(__file__).parent
 SITE = ROOT / "site"
 BACKLOG_HOURS = 6       # on a fresh state, ignore anything older
 STALE_HOURS = 12        # always: an item first seen this long after it was published isn't news
-MAX_EDIT_BATCHES = 3    # editor runs per cycle; a big backlog is worked off over several cycles
+MAX_EDIT_BATCHES = 6    # editor runs per cycle (~1 min each); a big backlog is worked off over several cycles
 HEARTBEAT_MINUTES = 20  # deploy at least this often, so the page can show the system is alive
 # These outlets refuse every request from data centers (checked 2026-10-14); we respect that and don't ask.
 CLOUD_SKIP = {"דבר", "Times of Israel"}
@@ -60,6 +60,10 @@ def main():
         except Exception as e:
             log(f"editor error: {type(e).__name__}: {str(e)[:300]}")
             break
+
+    waiting = con.execute("SELECT COUNT(*) FROM items WHERE status='new'").fetchone()[0]
+    if waiting:
+        log(f"still waiting for the editor: {waiting} items")
 
     feed, filtered = publish.build(con, publish.health_from_db(con, health))
     digest = hashlib.sha1(json.dumps([feed["stories"], filtered["items"]], ensure_ascii=False,
