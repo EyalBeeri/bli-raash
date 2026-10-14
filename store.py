@@ -54,6 +54,14 @@ def add_items(con, items, backlog_cutoff=None):
     return added
 
 
+def expire_new(con, cutoff):
+    """Items still waiting for the editor that went stale (older than `cutoff`, an ISO time) are skipped."""
+    n = con.execute("UPDATE items SET status='skipped' WHERE status='new' AND COALESCE(published, first_seen) < ?",
+                    (cutoff,)).rowcount
+    con.commit()
+    return n
+
+
 def item_time(row):
     return row["published"] or row["first_seen"]
 

@@ -3,3 +3,4 @@ __pycache__/
 # Calibration sets hold outlets' original text and private screenshots: kept local only.
 calib/
 page/calibrate.html
+site/

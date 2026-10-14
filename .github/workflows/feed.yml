@@ -1,0 +1,61 @@
+# The live feed: every ~5 minutes, fetch the outlets, let Claude filter and rewrite, and publish the page.
+# GitHub runs schedules no more often than every 5 minutes and sometimes later; that's the freshness we get.
+name: feed
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: feed
+  cancel-in-progress: false
+jobs:
+  cycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      deploy: ${{ steps.run.outputs.deploy }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # State (seen items, stories) lives in the workflow cache: private to the workflow, never published.
+      - name: Restore state
+        uses: actions/cache/restore@v4
+        with:
+          path: data/bli.db
+          key: state-${{ github.run_id }}
+          restore-keys: state-
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+      - name: Run one cycle
+        id: run
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: python cloud_run.py
+      - name: Save state
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: data/bli.db
+          key: state-${{ github.run_id }}
+      - name: Package the site
+        if: steps.run.outputs.deploy == 'true'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+  deploy:
+    needs: cycle
+    if: needs.cycle.outputs.deploy == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

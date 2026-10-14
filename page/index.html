@@ -229,7 +229,7 @@ function renderStatus() {
 function renderFoot() {
   const h = state.feed?.health || [];
   if (!h.length) { document.getElementById("foot").innerHTML = ""; return; }
-  document.getElementById("foot").innerHTML = `${state.voteMsg ? `<div class="health"><span class="bad">${esc(state.voteMsg)}</span></div>` : ""}<div>מקורות: ${h.length} אתרים, נבדקים כל 2 דקות.</div>
+  document.getElementById("foot").innerHTML = `${state.voteMsg ? `<div class="health"><span class="bad">${esc(state.voteMsg)}</span></div>` : ""}<div>מקורות: ${h.length} אתרים, נבדקים כל כמה דקות.</div>
     <div class="health">${h.map(x => `<span class="${x.ok ? "" : "bad"}" title="${esc(x.error || "")}">${esc(x.source)} ${x.ok ? (x.newest ? "· " + ago(x.newest) : "") : "· תקלה"}</span>`).join("")}</div>`;
 }
 
@@ -275,18 +275,37 @@ document.addEventListener("click", e => {
 
 setInterval(() => { renderStatus(); renderFoot(); }, 30000);
 
+function setFeed(feed) {
+  state.feed = feed;
+  // Highlight what arrived since the last delivery; the set lasts until the next feed update.
+  const keys = (state.feed?.stories || []).map(x => x.id + x.updated);
+  state.fresh = state.first ? new Set() : new Set(keys.filter(k => !state.seen.has(k)));
+  keys.forEach(k => state.seen.add(k));
+  if (state.feed) state.first = false;
+  render();
+}
+
+// Outside claude.ai (the public site) the feed comes from files next to the page, re-read every minute.
+async function poll() {
+  const pull = async name => {
+    const r = await fetch(name + "?t=" + Date.now(), { cache: "no-store" });
+    if (!r.ok) throw new Error(String(r.status));
+    return r.json();
+  };
+  try {
+    const feed = await pull("feed.json");
+    if (feed.updated !== state.feed?.updated) setFeed(feed);
+  } catch (e) { if (!state.feed) { state.dbMissing = true; render(); } }
+  try {
+    const f = await pull("filtered.json");
+    if (f.updated !== state.filtered?.updated) { state.filtered = f; render(); }
+  } catch (e) {}
+}
+
 (async () => {
   const db = window.claude?.use ? await window.claude.use("db") : null;
-  if (!db) { state.dbMissing = true; render(); return; }
-  db.doc("feed/latest").onSnapshot(s => {
-    state.feed = s.exists ? s.data() : null;
-    // Highlight what arrived since the last delivery; the set lasts until the next feed update.
-    const keys = (state.feed?.stories || []).map(x => x.id + x.updated);
-    state.fresh = state.first ? new Set() : new Set(keys.filter(k => !state.seen.has(k)));
-    keys.forEach(k => state.seen.add(k));
-    if (state.feed) state.first = false;
-    render();
-  }, () => {});
+  if (!db) { poll(); setInterval(poll, 60000); return; }
+  db.doc("feed/latest").onSnapshot(s => setFeed(s.exists ? s.data() : null), () => {});
   db.doc("feed/filtered").onSnapshot(s => { state.filtered = s.exists ? s.data() : null; render(); }, () => {});
   const [user, p] = await Promise.all([window.claude.use("user"), window.claude.use("permissions")]);
   perms = p;
