@@ -239,7 +239,9 @@ def run_once(con, log=print):
                 # A story becomes visible once a second outlet confirms it; show it at the confirmation time.
                 before = {x["name"] for x in s["sources"]}
                 after = {x["name"] for x in srcs}
-                upd = max(latest, s["updated"]) if len(before) < 2 <= len(after) else s["updated"]
+                # A confirming item processed late can carry an older time; the story still surfaces now.
+                confirmed_at = latest if latest > s["updated"] else store.now_iso()
+                upd = confirmed_at if len(before) < 2 <= len(after) else s["updated"]
                 con.execute("UPDATE stories SET sources=?, touched=?, updated=? WHERE id=?",
                             (json.dumps(srcs, ensure_ascii=False), store.now_iso(), upd, key))
             sid = key

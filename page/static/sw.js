@@ -1,7 +1,9 @@
 // Offline layer for the installed app: the page and the last feed stay readable without a connection.
-// Everything is fetched from the network first, so a working connection always shows the newest version.
-const CACHE = "bli-raash-v1";
-const SHELL = ["./", "manifest.webmanifest", "icons/icon-192.png", "icons/apple-touch-icon.png"];
+// The network is tried first so a good connection always shows the newest version; on a weak one we
+// fall back to the saved copy after a few seconds instead of leaving a blank screen.
+const CACHE = "bli-raash-v2";
+const SHELL = ["./", "feed.json", "filtered.json", "manifest.webmanifest", "icons/icon-192.png", "icons/apple-touch-icon.png"];
+const NETWORK_WAIT_MS = 4000;
 
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -19,17 +21,25 @@ self.addEventListener("fetch", event => {
   const req = event.request;
   const url = new URL(req.url);
   if (req.method !== "GET" || url.origin !== location.origin) return;  // fonts and outlets: browser default
-  // Store under the address without its cache-busting query, so the last copy can stand in when offline.
-  const key = url.origin + url.pathname;
-  event.respondWith(
-    fetch(req)
-      .then(res => {
-        if (res.ok) {
-          const copy = res.clone();
-          caches.open(CACHE).then(c => c.put(key, copy));
-        }
-        return res;
-      })
-      .catch(() => caches.match(key).then(hit => hit || caches.match("./")))
-  );
+  const key = url.origin + url.pathname;  // one saved copy per file, whatever the query string
+  const saved = () => caches.match(key).then(hit => hit || (req.mode === "navigate" ? caches.match(new URL("./", location).href) : undefined));
+
+  const network = fetch(req);
+  // Save a copy of every good response; registered up front so the browser keeps the worker alive for it.
+  event.waitUntil(network.then(res => {
+    if (res.ok) {
+      const copy = res.clone();
+      return caches.open(CACHE).then(c => c.put(key, copy));
+    }
+  }).catch(() => {}));
+  const timeout = new Promise(resolve => setTimeout(resolve, NETWORK_WAIT_MS));
+
+  event.respondWith((async () => {
+    // Whichever comes first: the network, or the wait running out with a saved copy available.
+    const first = await Promise.race([network.catch(() => null), timeout.then(() => "slow")]);
+    if (first && first !== "slow") return first;
+    const copy = await saved();
+    if (copy) return copy;
+    return network;  // nothing saved yet: keep waiting for the network (or its error)
+  })());
 });

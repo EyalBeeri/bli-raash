@@ -115,10 +115,6 @@ main { max-width: 680px; margin: 0 auto; padding-inline: 14px; padding-block: 8p
 .byline a:hover { text-decoration-color: currentColor; }
 .byline .upd { display: block; }
 
-@media (prefers-reduced-motion: no-preference) {
-  .story.fresh { animation: settle 1.6s ease-out; }
-  @keyframes settle { from { background-color: var(--butter); } }
-}
 
 /* The ending: the feed is finite on purpose. */
 .end { text-align: center; padding-block: 44px 20px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
@@ -156,6 +152,7 @@ footer { max-width: 680px; margin: 0 auto; padding-inline: 20px; padding-block: 
   .sheet { padding-inline: 28px; }
   .story.urgent { margin-inline: -28px; padding-inline: 28px; }
 }
+.pill.new { background: var(--rose); color: var(--sheet); }
 </style>
 </head>
 <body>
@@ -170,13 +167,15 @@ footer { max-width: 680px; margin: 0 auto; padding-inline: 20px; padding-block: 
       <span class="status" id="status"><span class="dot"></span><span id="status-text">מתחבר…</span></span>
     </div>
     <div class="views" role="tablist" aria-label="תצוגה">
-      <button class="view" role="tab" id="tab-news" aria-selected="true" aria-controls="view">חדשות<span class="n" id="n-news"></span></button>
-      <button class="view" role="tab" id="tab-cuts" aria-selected="false" aria-controls="view">מה סוננו<span class="n" id="n-cuts"></span></button>
+      <button class="view" role="tab" id="tab-news" aria-selected="true" aria-controls="view" tabindex="0">חדשות<span class="n" id="n-news"></span></button>
+      <button class="view" role="tab" id="tab-cuts" aria-selected="false" aria-controls="view" tabindex="-1">מה סוננו<span class="n" id="n-cuts"></span></button>
     </div>
   </div>
 </header>
-<main id="view" role="tabpanel">
-  <div class="empty"><strong>טוען את הידיעות</strong>רגע אחד.</div>
+<main>
+  <div id="view" role="tabpanel" aria-labelledby="tab-news">
+    <div class="empty"><strong>טוען את הידיעות</strong>רגע אחד.</div>
+  </div>
 </main>
 <footer id="foot"></footer>
 
@@ -189,31 +188,41 @@ const dayKeyFmt = new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeri
 const dayNameFmt = new Intl.DateTimeFormat("he-IL", { timeZone: TZ, weekday: "long", day: "numeric", month: "long" });
 const hourFmt = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, hour: "numeric", hour12: false });
 
-const state = { feed: null, filtered: null, tab: "news", cat: null, seen: new Set(), fresh: new Set(), first: true, failed: false, installEvent: null };
+const state = { feed: null, filtered: null, tab: "news", cat: null, failed: false, sig: "", prevSeen: null,
+                installEvent: null, installed: false, pendingReload: false };
 try { const t = localStorage.getItem("bli-tab"); if (t === "news" || t === "cuts") state.tab = t; } catch (e) {}
+// Stories that arrived since the reader's previous visit carry a "חדש" pill for this whole visit.
+try { state.prevSeen = localStorage.getItem("bli-last-seen"); } catch (e) {}
+const markSeen = () => { try { localStorage.setItem("bli-last-seen", new Date().toISOString()); } catch (e) {} };
 
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const safeUrl = u => /^https?:\/\//.test(u || "") ? u : "#";
 const fmt = (f, iso) => { try { return f.format(new Date(iso)); } catch (e) { return ""; } };
+const ms = iso => new Date(iso).getTime();
 const dayKey = iso => fmt(dayKeyFmt, iso);
 
 function ago(iso) {
-  const m = Math.round((Date.now() - new Date(iso)) / 60000);
+  const m = Math.round((Date.now() - ms(iso)) / 60000);
   if (!Number.isFinite(m)) return "";
   if (m < 1) return "עכשיו";
   if (m < 60) return `לפני ${m} דק׳`;
   const h = Math.floor(m / 60);
   return h === 1 ? "לפני שעה" : h === 2 ? "לפני שעתיים" : `לפני ${h} שעות`;
 }
+// Calendar arithmetic on the Israeli date itself, so "yesterday" survives the daylight-saving change.
+function shiftKey(key, days) {
+  const [y, m, d] = key.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
+}
 function dayLabel(iso) {
-  const k = dayKey(iso);
-  if (k === dayKey(new Date().toISOString())) return "היום";
-  if (k === dayKey(new Date(Date.now() - 864e5).toISOString())) return "אתמול";
+  const k = dayKey(iso), today = dayKey(new Date().toISOString());
+  if (k === today) return "היום";
+  if (today && k === shiftKey(today, -1)) return "אתמול";
   return fmt(dayNameFmt, iso);
 }
 function greeting() {
   const h = Number(hourFmt.format(new Date()));
-  return h >= 5 && h < 12 ? "בוקר טוב" : h < 17 && h >= 12 ? "צהריים טובים" : h >= 17 && h < 22 ? "ערב טוב" : "לילה טוב";
+  return h >= 5 && h < 12 ? "בוקר טוב" : h >= 12 && h < 17 ? "צהריים טובים" : h >= 17 && h < 22 ? "ערב טוב" : "לילה טוב";
 }
 function countLine(n) {
   if (n === 0) return "ב-24 השעות האחרונות לא קרה משהו שחשוב לדעת.";
@@ -229,27 +238,37 @@ const outletList = s => {
 function storyHtml(s) {
   const pills = [`<span class="pill topic">${esc(s.topic)}</span>`]
     .concat((s.impact || []).filter(k => IMPACT[k]).map(k => `<span class="pill ${k}">${IMPACT[k]}</span>`));
+  if (state.prevSeen && ms(s.updated) > ms(state.prevSeen)) pills.unshift(`<span class="pill new">חדש</span>`);
   if (s.urgent) pills.unshift(`<span class="pill urgent">דחוף</span>`);
   const links = outletList(s).map(([name, url]) => `<a href="${esc(safeUrl(url))}" target="_blank" rel="noopener"><bdi>${esc(name)}</bdi></a>`).join(", ");
-  const upd = s.updates > 0 ? `<span class="upd">עודכן. פורסם לראשונה ב-${fmt(hmFmt, s.created)}</span>` : "";
-  const fresh = state.fresh.has(s.id + s.updated) ? " fresh" : "";
-  return `<article class="story${s.urgent ? " urgent" : ""}${fresh}">
+  const firstAt = fmt(hmFmt, s.created);
+  const note = s.updates > 0 ? `עודכן. פורסם לראשונה ב-${firstAt}`
+    : ms(s.updated) - ms(s.created) > 5 * 60000 ? `דווח לראשונה ב-${firstAt}, אושר ממקור נוסף ב-${fmt(hmFmt, s.updated)}` : "";
+  return `<article class="story${s.urgent ? " urgent" : ""}" data-id="${esc(s.id)}">
     <div class="meta"><span class="time">${fmt(hmFmt, s.updated)}</span>${pills.join("")}</div>
     <h3>${esc(s.headline)}</h3>
     <p>${esc(s.summary)}</p>
     ${s.action ? `<div class="todo"><b>מה לעשות:</b>${esc(s.action)}</div>` : ""}
-    <div class="byline">דיווחו: ${links}${upd}</div>
+    <div class="byline">דיווחו: ${links}${note ? `<span class="upd">${note}</span>` : ""}</div>
   </article>`;
+}
+
+function endLine() {
+  const items = state.filtered?.items || [];
+  const waiting = items.filter(i => i.category === WAITING).length, cut = items.length - waiting;
+  const n = x => x.toLocaleString("he-IL");
+  if (cut && waiting) return `${n(cut)} ידיעות אחרות לא עברו את המבחן, ו-${n(waiting)} מחכות שמקור נוסף יאשר אותן.`;
+  if (cut) return `${n(cut)} ידיעות אחרות לא עברו את המבחן.`;
+  if (waiting) return `${n(waiting)} ידיעות מחכות שמקור נוסף יאשר אותן.`;
+  return "כל השאר לא עבר את המבחן.";
 }
 
 function renderNews() {
   const stories = [...(state.feed?.stories || [])].sort((a, b) => String(b.updated).localeCompare(String(a.updated)));
   const dayAgo = Date.now() - 864e5;
-  const todayCount = stories.filter(s => new Date(s.updated).getTime() >= dayAgo).length;
-  const hidden = state.filtered?.items?.length || 0;
-  let out = `<section class="hello"><h2>${greeting()}.</h2><p>${countLine(todayCount)}</p></section>`;
+  let out = `<section class="hello"><h2>${greeting()}.</h2><p>${countLine(stories.filter(s => ms(s.updated) >= dayAgo).length)}</p></section>`;
   if (!stories.length) {
-    return out + `<div class="empty"><strong>${state.failed ? "אין חיבור כרגע" : "עוד אין ידיעות"}</strong>${state.failed ? "נסו שוב בעוד רגע. כשיש חיבור הדף מתעדכן לבד." : "ידיעות שדווחו בשני כלי תקשורת לפחות יופיעו כאן."}</div>`;
+    return out + `<div class="empty"><strong>${state.failed ? "אין חיבור כרגע" : "עוד אין ידיעות"}</strong>${state.failed ? "כשיחזור החיבור הדף יתעדכן לבד." : "ידיעות שדווחו בשני כלי תקשורת לפחות יופיעו כאן."}</div>`;
   }
   const byDay = new Map();
   for (const s of stories) { const d = dayLabel(s.updated); if (!byDay.has(d)) byDay.set(d, []); byDay.get(d).push(s); }
@@ -257,7 +276,7 @@ function renderNews() {
   out += `<section class="end">
     <svg class="mark" aria-hidden="true"><use href="#settle"/></svg>
     <strong>זהו, ראית את כל מה שחשוב.</strong>
-    <p>${hidden ? `${hidden.toLocaleString("he-IL")} ידיעות אחרות לא עברו את המבחן.` : "כל השאר לא עבר את המבחן."}</p>
+    <p>${endLine()}</p>
     <button class="link-btn" data-goto="cuts">מה סוננו ולמה</button>
   </section>`;
   return out;
@@ -281,93 +300,132 @@ function renderCuts() {
 function renderStatus() {
   const el = document.getElementById("status"), txt = document.getElementById("status-text");
   if (!state.feed?.updated) { el.className = "status"; txt.textContent = state.failed ? "אין חיבור" : "מתחבר…"; return; }
-  const mins = (Date.now() - new Date(state.feed.updated)) / 60000;
-  const stale = mins > 45;
+  const stale = (Date.now() - ms(state.feed.updated)) / 60000 > 45;
   el.className = "status " + (stale ? "stale" : "live");
   txt.textContent = (stale ? "לא התעדכן " : "נבדק ") + ago(state.feed.updated);
 }
 
+const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const onPhone = matchMedia("(pointer: coarse)").matches;
+
 function renderFoot() {
   const h = state.feed?.health || [];
-  const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+  const standalone = state.installed || matchMedia("(display-mode: standalone)").matches || navigator.standalone;
   let html = "";
   if (h.length) {
     html += `<div>הידיעות נאספות מ-${h.length} כלי תקשורת ונבדקות כל כמה דקות. ידיעה מופיעה רק כשלפחות שניים מהם דיווחו עליה.</div>
       <div class="outlets">${h.map(x => `<span class="${x.ok ? "" : "bad"}" title="${esc(x.error || "")}"><bdi>${esc(x.source)}</bdi>${x.ok ? (x.newest ? ", " + ago(x.newest) : "") : ", תקלה"}</span>`).join("")}</div>`;
   }
   if (!standalone) {
-    html += state.installEvent
-      ? `<div class="install">אפשר להתקין את בלי רעש כאפליקציה בטלפון. <button id="install">התקנה</button></div>`
-      : `<div class="install">רוצים את זה כאפליקציה? בתפריט של הדפדפן בטלפון בוחרים "הוספה למסך הבית".</div>`;
+    if (state.installEvent) html += `<div class="install">אפשר להתקין את בלי רעש כאפליקציה. <button id="install">התקנה</button></div>`;
+    else if (isIOS) html += `<div class="install">להתקנה כאפליקציה: בספארי לוחצים על כפתור השיתוף ובוחרים "הוספה למסך הבית".</div>`;
+    else if (onPhone) html += `<div class="install">להתקנה כאפליקציה: בתפריט הדפדפן בוחרים "הוספה למסך הבית".</div>`;
   }
   document.getElementById("foot").innerHTML = html;
 }
 
-function render() {
+// Rebuild the view, keeping the reader's place when stories are added above what they're reading.
+function render({ keepPlace = false } = {}) {
   const nNews = state.feed?.stories?.length || 0, nCuts = state.filtered?.items?.length || 0;
   document.getElementById("n-news").textContent = nNews ? nNews : "";
   document.getElementById("n-cuts").textContent = nCuts ? nCuts.toLocaleString("he-IL") : "";
-  for (const t of ["news", "cuts"]) document.getElementById("tab-" + t).setAttribute("aria-selected", String(state.tab === t));
-  document.getElementById("view").innerHTML = state.tab === "news" ? renderNews() : renderCuts();
+  for (const t of ["news", "cuts"]) {
+    const b = document.getElementById("tab-" + t);
+    b.setAttribute("aria-selected", String(state.tab === t));
+    b.tabIndex = state.tab === t ? 0 : -1;
+  }
+  const view = document.getElementById("view");
+  view.setAttribute("aria-labelledby", "tab-" + state.tab);
+  let anchor = null;
+  if (keepPlace && state.tab === "news" && window.scrollY > 0) {
+    const headerBottom = document.querySelector(".top").getBoundingClientRect().bottom;
+    for (const a of view.querySelectorAll(".story")) {
+      const r = a.getBoundingClientRect();
+      if (r.bottom > headerBottom) { anchor = { id: a.dataset.id, top: r.top }; break; }
+    }
+  }
+  view.innerHTML = state.tab === "news" ? renderNews() : renderCuts();
+  if (anchor) {
+    const el = [...view.querySelectorAll(".story")].find(a => a.dataset.id === anchor.id);
+    if (el) window.scrollBy(0, el.getBoundingClientRect().top - anchor.top);
+  }
   renderStatus();
   renderFoot();
 }
 
-function setTab(t) {
+function setTab(t, focus) {
   state.tab = t;
   try { localStorage.setItem("bli-tab", t); } catch (e) {}
   render();
   window.scrollTo(0, 0);
+  if (focus) document.getElementById("tab-" + t).focus();
 }
 
 document.addEventListener("click", e => {
   const tab = e.target.closest(".view");
   if (tab) { setTab(tab.id === "tab-cuts" ? "cuts" : "news"); return; }
   const go = e.target.closest("[data-goto]");
-  if (go) { setTab(go.dataset.goto); return; }
+  if (go) { setTab(go.dataset.goto, true); return; }
   const cat = e.target.closest(".cat");
-  if (cat) { state.cat = state.cat === cat.dataset.cat ? null : cat.dataset.cat; render(); return; }
+  if (cat) {
+    const c = cat.dataset.cat;
+    state.cat = state.cat === c ? null : c;
+    render();
+    [...document.querySelectorAll(".cat")].find(b => b.dataset.cat === c)?.focus();
+    return;
+  }
   if (e.target.closest("#install") && state.installEvent) {
     state.installEvent.prompt();
     state.installEvent.userChoice.finally(() => { state.installEvent = null; renderFoot(); });
   }
 });
-
-function setFeed(feed) {
-  state.feed = feed;
-  // Highlight what arrived since the last refresh; it lasts until the next one.
-  const keys = (feed?.stories || []).map(x => x.id + x.updated);
-  state.fresh = state.first ? new Set() : new Set(keys.filter(k => !state.seen.has(k)));
-  keys.forEach(k => state.seen.add(k));
-  if (feed) state.first = false;
-}
+document.querySelector(".views").addEventListener("keydown", e => {
+  if (e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "Home" || e.key === "End") {
+    e.preventDefault();
+    setTab(state.tab === "news" ? "cuts" : "news", true);
+  }
+});
 
 async function pull(name) {
-  const r = await fetch(name + "?t=" + Date.now(), { cache: "no-store" });
+  // Revalidate with the server each time; unchanged files come back as a cheap "not modified".
+  const r = await fetch(name, { cache: "no-cache" });
   if (!r.ok) throw new Error(String(r.status));
   return r.json();
 }
 
-async function refresh() {
-  let changed = false;
-  try {
-    const feed = await pull("feed.json");
-    state.failed = false;
-    if (feed.updated !== state.feed?.updated) { setFeed(feed); changed = true; }
-  } catch (e) { if (!state.feed) { state.failed = true; changed = true; } }
-  try {
-    const f = await pull("filtered.json");
-    if (f.updated !== state.filtered?.updated) { state.filtered = f; changed = true; }
-  } catch (e) {}
-  if (changed) render(); else { renderStatus(); }
+const signature = () => [state.failed, (state.feed?.stories || []).map(s => s.id + s.updated).join(","),
+  (state.filtered?.items || []).length, state.filtered?.items?.[0]?.id].join("|");
+
+async function refresh(force) {
+  if (document.hidden && !force) return;
+  try { state.feed = await pull("feed.json"); state.failed = false; } catch (e) { if (!state.feed) state.failed = true; }
+  try { state.filtered = await pull("filtered.json"); } catch (e) {}
+  const sig = signature();
+  if (sig !== state.sig) { const first = !state.sig; state.sig = sig; render({ keepPlace: !first }); }
+  else { renderStatus(); renderFoot(); }
 }
 
+// The installed app picks up a new version of itself, but never reloads while someone is reading.
+let swReg = null;
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js").then(r => { swReg = r; }).catch(() => {});
+  let hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (!hadController) { hadController = true; return; }
+    if (document.hidden) location.reload(); else state.pendingReload = true;
+  });
+}
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) { markSeen(); if (state.pendingReload) location.reload(); return; }
+  refresh(true);
+  swReg?.update().catch(() => {});
+});
+window.addEventListener("pagehide", markSeen);
 window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); state.installEvent = e; renderFoot(); });
-document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") refresh(); });
-if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+window.addEventListener("appinstalled", () => { state.installed = true; state.installEvent = null; renderFoot(); });
 
 render();
-refresh();
+refresh(true);
 setInterval(refresh, 60000);
 setInterval(renderStatus, 30000);
 </script>
