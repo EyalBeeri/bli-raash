@@ -15,6 +15,15 @@ jobs:
           python-version: "3.12"
       - name: Fetch every outlet from GitHub's servers
         run: python sources.py
+      - name: Blocked feeds with an honest feed-reader identity
+        run: |
+          UA="Mozilla/5.0 (compatible; bli-raash-feed/1.0; +https://github.com/EyalBeeri/bli-raash)"
+          for u in https://www.israelhayom.co.il/rss.xml https://www.davar1.co.il/feed/ https://www.timesofisrael.com/feed/; do
+            for ua in "$UA" "Feedly/1.0 (+http://www.feedly.com/fetcher.html)"; do
+              code=$(curl -s -o /dev/null -w "%{http_code}" -A "$ua" -H "Accept: application/rss+xml, application/xml" -m 20 "$u")
+              echo "$code  $u  [$ua]"
+            done
+          done
       - name: Check the Claude subscription token
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
