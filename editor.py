@@ -105,28 +105,34 @@ def triage(stories, items):
     return drops, cost
 
 
-def build_input(stories, items, unconfirmed=()):
+def build_context(stories):
+    """The feed so far. It goes into the system prompt, which is cached, so runs that don't change any
+    story re-read it from the cache instead of paying for it again. Stable order keeps it cacheable."""
     lines = ["EXISTING STORIES IN THE FEED (id | last update | headline | summary; older stories by headline only):"]
     recent = (datetime.now(timezone.utc) - timedelta(hours=FULL_CONTEXT_HOURS)).isoformat(timespec="seconds")
-    for s in stories:
+    for s in sorted(stories, key=lambda s: s["id"]):
         tail = f" | {s['summary']}" if s["updated"] >= recent else ""
         lines.append(f"{s['id']} | {_il(s['updated'])} | {s['headline']}{tail}")
     if not stories:
         lines.append("(none yet)")
+    return "\n".join(lines)
+
+
+def build_input(items, unconfirmed=()):
+    lines = []
     if unconfirmed:
-        lines.append("")
         lines.append("UNCONFIRMED REPORTS (id | outlet | time | title):")
         for n, u in enumerate(unconfirmed):
             lines.append(f"u{n} | {u['source']} | {_il(store.item_time(u))} | {u['title']}")
-    lines.append("")
+        lines.append("")
     lines.append("NEW ITEMS (i | outlet | time | title | summary):")
     for i, it in enumerate(items):
         lines.append(f"{i} | {it['source']} | {_il(store.item_time(it))} | {it['title']} | {it['summary'] or ''}")
     return "\n".join(lines)
 
 
-def call_claude(user_input):
-    system = SYSTEM + (ROOT / "rules.md").read_text(encoding="utf-8")
+def call_claude(context, user_input):
+    system = SYSTEM + (ROOT / "rules.md").read_text(encoding="utf-8") + "\n\n" + context
     return _claude_json(MODEL, system, user_input, SCHEMA, "Process the new items according to your instructions.")
 
 
@@ -177,7 +183,7 @@ def run_once(con, log=print):
         return total
 
     try:
-        result, cost = call_claude(build_input(stories, items, unconfirmed))
+        result, cost = call_claude(build_context(stories), build_input(items, unconfirmed))
     except Exception:
         _note_attempt(con, items)
         raise
