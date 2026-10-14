@@ -14,8 +14,8 @@ from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from zoneinfo import ZoneInfo
 
-UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-      "(KHTML, like Gecko) Chrome/130.0 Safari/537.36")
+# We identify ourselves honestly. Sites that refuse this (Davar, Times of Israel from data centers) are respected.
+UA = "Mozilla/5.0 (compatible; bli-raash-feed/1.0; +https://github.com/EyalBeeri/bli-raash)"
 IL = ZoneInfo("Asia/Jerusalem")  # naive timestamps from Israeli sites are local time (DST-aware)
 
 
