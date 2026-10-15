@@ -105,7 +105,7 @@ button { font: inherit; color: inherit; }
 .story.seen summary:hover h3, .story.seen details[open] h3 { color: var(--ink); }
 /* The hint that a headline opens: a small chevron after it, turning over when open. */
 .more { display: inline-block; width: 11px; height: 11px; margin-inline-start: 7px; vertical-align: 0.12em; color: var(--ink-3); transition: transform 0.2s ease; }
-details[open] .more { transform: rotate(180deg); }
+details[open] > summary .more { transform: rotate(180deg); }
 .tail { white-space: nowrap; }
 /* Reading settles things: a dot empties, and the noise at the top calms (see markRead). */
 .node { transition: background-color 0.8s ease; }
@@ -113,6 +113,19 @@ details[open] .more { transform: rotate(180deg); }
 #hero { transition: opacity 0.5s ease; }
 #hero.swap { opacity: 0; }
 @media (prefers-reduced-motion: reduce) { .node, .lead svg, #hero { transition: none; } }
+
+.permit { margin: 14px 0 0; color: var(--ink-2); font-size: 0.95rem; }
+/* The reading lamp: the story at the reading point is in full ink, the rest fade with distance, and the
+   lifeline is inked down to where the reader is. */
+.feed { position: relative; }
+.inked { position: absolute; top: 64px; inset-inline-start: calc(var(--x) - 0.75px); width: 1.5px; height: 0; background: var(--ink); z-index: 1; pointer-events: none; }
+.node { z-index: 2; }
+.story > .margin, .story > details { opacity: var(--lamp, 1); transition: opacity 0.25s linear; }
+/* Older days fold into a single row; one with something unread in it opens by itself. */
+.day-group > summary { list-style: none; cursor: pointer; }
+.day-group > summary::-webkit-details-marker { display: none; }
+.day-group > summary.row { display: grid; }
+.day-group .count { color: var(--ink-2); font-size: 0.95rem; align-self: center; }
 
 /* A day boundary: the line passes under the day's name. */
 .day { padding-block: 14px; }
@@ -358,7 +371,11 @@ function markRead(el) {
   if (!left) {
     const hero = document.getElementById("hero");
     hero.classList.add("swap");
-    setTimeout(() => { hero.innerHTML = `ראית הכול.<span class="soft">אין חדש נוסף.</span>`; hero.classList.remove("swap"); }, 500);
+    setTimeout(() => {
+      hero.innerHTML = `ראית הכול.<span class="soft">אין חדש נוסף.</span>`;
+      hero.classList.remove("swap");
+      if (canClose()) document.getElementById("permit").hidden = false;
+    }, 500);
   }
 }
 
@@ -386,6 +403,30 @@ document.addEventListener("toggle", e => {
   if (story && e.target.open) markRead(story);
 }, true);
 
+// "You can close this" is only true once notifications reach this phone.
+const canClose = () => "Notification" in window && Notification.permission === "granted";
+
+// The reading lamp: fade stories by their distance from the reading point, and ink the lifeline down to it.
+function lamp() {
+  const feed = document.querySelector(".feed");
+  if (!feed) return;
+  const vh = innerHeight, focus = vh * 0.42, still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  for (const el of feed.querySelectorAll(".story")) {
+    const r = el.getBoundingClientRect();
+    if (!r.height) continue;   // inside a closed day
+    const d = focus < r.top ? r.top - focus : focus > r.bottom ? focus - r.bottom : 0;
+    el.style.setProperty("--lamp", still ? "1" : (1 - 0.55 * Math.min(1, d / (vh * 0.6))).toFixed(2));
+  }
+  const fr = feed.getBoundingClientRect(), end = feed.querySelector(".end");
+  const max = end ? end.offsetTop + 30 - 64 : fr.height - 64;
+  feed.querySelector(".inked").style.height = Math.max(0, Math.min(max, focus - fr.top - 64)) + "px";
+}
+let lampQueued = false;
+const queueLamp = () => { if (!lampQueued) { lampQueued = true; requestAnimationFrame(() => { lampQueued = false; lamp(); }); } };
+addEventListener("scroll", queueLamp, { passive: true });
+addEventListener("resize", queueLamp);
+document.addEventListener("toggle", queueLamp, true);
+
 // How much was left out, in one sentence: the reassurance of a finite page, without a second feed to scroll.
 const SHORT = { "פשיעה ותאונות": "פשיעה ותאונות", "דעות ופרשנות": "דעות", "קמפיין וסקרים": "קמפיין הבחירות",
   "השערות ודיווחים לא מאומתים": "השערות", "חדשות חוץ": "חדשות חוץ שגרתיות", "ספורט": "ספורט", "תרבות ופנאי": "תרבות",
@@ -404,19 +445,29 @@ function renderNews() {
   const stories = [...(state.feed?.stories || [])].sort((a, b) => String(b.updated).localeCompare(String(a.updated)));
   seedSeen(stories);
   const fresh = stories.filter(s => !isSeen(s)).length;
-  let out = `<section class="hello"><h2 id="hero">${heroLine(stories, fresh)}</h2></section>`;
+  let out = `<section class="hello"><h2 id="hero">${heroLine(stories, fresh)}</h2>
+    <p class="permit" id="permit"${fresh || !canClose() ? " hidden" : ""}>אפשר לסגור. אם יקרה משהו דחוף, תקבל התראה.</p></section>`;
   if (!stories.length) {
     return out + `<div class="empty"><strong>${state.failed ? "אין חיבור כרגע" : "עוד אין ידיעות"}</strong>${state.failed ? "כשיחזור החיבור הדף יתעדכן לבד." : "ידיעות שדווחו בכלי תקשורת משתי קבוצות בעלות לפחות יופיעו כאן."}</div>`;
   }
   lineAmp = ampFor(fresh);
   out += `<div class="feed"><div class="lead${fresh ? "" : " quiet"}" aria-hidden="true"><svg viewBox="0 0 24 64">
     <path d="${noisePath(lineAmp)}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>`;
-  let day = "היום";
-  stories.forEach((s, i) => {
+  out += `<div class="inked" aria-hidden="true"></div>`;
+  const groups = [];
+  for (const s of stories) {
     const d = dayLabel(s.updated);
-    if (d !== day) { out += `<div class="row day"><div class="margin">${esc(d)}</div></div>`; day = d; }
-    out += storyHtml(s, i === 0);
-  });
+    if (groups.at(-1)?.label !== d) groups.push({ label: d, items: [] });
+    groups.at(-1).items.push(s);
+  }
+  let first = true;
+  for (const g of groups) {
+    const rows = g.items.map(s => { const h = storyHtml(s, first); first = false; return h; }).join("");
+    if (g.label === "היום") { out += rows; continue; }
+    const unread = g.items.filter(s => !isSeen(s)).length, n = g.items.length;
+    out += `<details class="day-group"${unread ? " open" : ""}><summary class="row day"><div class="margin">${esc(g.label)}</div>
+      <div class="count">${n === 1 ? "ידיעה אחת" : `${n} ידיעות`}${unread ? `, ${unread === 1 ? "אחת חדשה" : `${unread} חדשות`}` : ""}${MORE}</div></summary>${rows}</details>`;
+  }
   out += `<div class="row end"><div class="msg"><strong>זהו, עד כאן.</strong><p>${endLine()}</p></div></div></div>`;
   return out;
 }
@@ -519,6 +570,7 @@ function render({ keepPlace = false } = {}) {
   }
   view.innerHTML = renderNews();
   watchReading();
+  lamp();
   if (anchor) {
     const el = [...view.querySelectorAll(".story")].find(a => a.dataset.id === anchor.id);
     if (el) window.scrollBy(0, el.getBoundingClientRect().top - anchor.top);

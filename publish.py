@@ -69,11 +69,12 @@ def build(con, health):
         cuts.append({"id": hashlib.sha1(r["url"].encode()).hexdigest()[:12], "t": store.item_time(r),
                      "source": r["source"], "title": r["title"][:160], "url": r["url"],
                      "category": r["cut_category"] or "אחר", "reason": (r["cut_reason"] or "")[:80]})
-    # The page ends with how much was left out; the full list lives in filtered.json for cuts.html.
-    by_cat = {}
-    for c in cuts:
-        by_cat[c["category"]] = by_cat.get(c["category"], 0) + 1
-    feed["cuts"] = {"total": len(cuts), "by_category": dict(sorted(by_cat.items(), key=lambda kv: -kv[1]))}
+    # The page ends with how much was left out (counted in full: the list above stops at 900);
+    # the list itself lives in filtered.json for cuts.html.
+    by_cat = dict(con.execute("""SELECT COALESCE(NULLIF(cut_category, ''), 'אחר'), COUNT(*) FROM items
+                                 WHERE status='cut' AND COALESCE(published, first_seen) >= ?
+                                 GROUP BY 1 ORDER BY 2 DESC""", (_ago(CUTS_HOURS, 30),)).fetchall())
+    feed["cuts"] = {"total": sum(by_cat.values()), "by_category": by_cat}
     filtered = {"updated": store.now_iso(), "items": waiting + cuts}
     while _size(filtered) > MAX_DOC_BYTES and filtered["items"]:
         del filtered["items"][-25:]
