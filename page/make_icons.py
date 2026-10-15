@@ -63,10 +63,26 @@ def icon(size, mark_width_ratio, radius_ratio=0.0):
     return img
 
 
+def badge(size):
+    """Android's status-bar icon for notifications: the mark alone, white on transparent (Android tints it)."""
+    ss = 4
+    big = size * ss
+    img = Image.new("RGBA", (big, big), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    scale = big * 0.86 / 92
+    ox, oy = (big - 92 * scale) / 2 - 2 * scale, big / 2 - 18 * scale
+    r = 3.2 * scale   # a heavier stroke than the app icon, so it reads at 24px
+    for x, y in path_points():
+        cx, cy = ox + x * scale, oy + y * scale
+        d.ellipse((cx - r, cy - r, cx + r, cy + r), fill=(255, 255, 255, 255))
+    return img.transpose(Image.FLIP_LEFT_RIGHT).resize((size, size), Image.LANCZOS)
+
+
 if __name__ == "__main__":
     OUT.mkdir(parents=True, exist_ok=True)
     icon(192, 0.72, 0.22).save(OUT / "icon-192.png")
     icon(512, 0.72, 0.22).save(OUT / "icon-512.png")
     icon(512, 0.56).save(OUT / "icon-maskable-512.png")   # full bleed; mark inside the 80% safe zone
     icon(180, 0.66).save(OUT / "apple-touch-icon.png")     # iOS rounds the corners itself
+    badge(96).save(OUT / "badge-96.png")                    # notification badge (Android status bar)
     print("icons written to", OUT)

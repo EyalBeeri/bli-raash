@@ -18,7 +18,7 @@ STALE_FROM_MIN = 75   # the page deploys at least every 20 minutes; schedules ca
 def main():
     if "--test" in sys.argv:
         ok = notify.send("בלי רעש: בדיקה", "ההתראות עובדות. ידיעות דחופות יגיעו לכאן, וגם הודעה אם הדף מפסיק להתעדכן.")
-        print("test sent" if ok else "no NTFY_TOPIC: nothing sent")
+        print("test sent" if ok else "no PUSH_SUBSCRIPTION / VAPID_PRIVATE_KEY: nothing sent")
         return
     with urllib.request.urlopen(notify.SITE + "feed.json", timeout=30) as r:
         updated = json.load(r)["updated"]
@@ -30,7 +30,7 @@ def main():
         when = f"{round(age)} דקות" if hours < 2 else f"{round(hours)} שעות"
         notify.send("בלי רעש: הדף לא מתעדכן",
                     f"העדכון האחרון היה לפני {when}. כנראה שהעבודה המתוזמנת ב-GitHub נעצרה או נכשלת.",
-                    priority=4, click="https://github.com/EyalBeeri/bli-raash/actions")
+                    priority=4, url="https://github.com/EyalBeeri/bli-raash/actions")
         print("alert sent")
 
 

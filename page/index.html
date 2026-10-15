@@ -135,6 +135,7 @@ footer { padding-block: 34px calc(36px + env(safe-area-inset-bottom, 0px)); colo
 .outlets .bad { color: var(--red); }
 .install { border-top: 1px solid var(--rule); padding-top: 12px; color: var(--ink-2); display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .install button { border: 0; background: var(--ink); color: var(--paper); padding: 5px 14px; font-weight: 600; cursor: pointer; }
+.notify textarea { width: 100%; height: 6.5em; margin-top: 6px; font: 0.72rem/1.4 ui-monospace, monospace; direction: ltr; color: var(--ink); background: var(--paper); border: 1px solid var(--line); padding: 6px; }
 
 @media (min-width: 720px) {
   body { font-size: 18px; }
@@ -470,7 +471,40 @@ function renderFoot() {
     else if (isIOS) html += `<div class="install">להתקנה כאפליקציה: בספארי לוחצים על כפתור השיתוף ובוחרים "הוספה למסך הבית".</div>`;
     else if (onPhone) html += `<div class="install">להתקנה כאפליקציה: בתפריט הדפדפן בוחרים "הוספה למסך הבית".</div>`;
   }
+  if (WANTS_NOTIFY) html += notifyBox();
   document.getElementById("foot").innerHTML = html;
+}
+
+// Notifications for the owner's phone. Opening the page with ?notify shows this box: allowing notifications gives
+// a code (the phone's push subscription) that becomes the PUSH_SUBSCRIPTION secret the cloud job pushes to.
+// The public key below pairs with the VAPID_PRIVATE_KEY secret that signs every push.
+const VAPID_PUBLIC = "BOaVbF__MgOysRNX-3RFXiveggNL12YEs_aVTgp3esZmBxTkqA8ZPKjQOVbOk6aQ8japNVrALQ85cgVouKkBi6E";
+const WANTS_NOTIFY = new URLSearchParams(location.search).has("notify");
+function notifyBox() {
+  if (!("serviceWorker" in navigator && "PushManager" in window && "Notification" in window)) {
+    return `<div class="install notify">הדפדפן הזה לא תומך בהתראות. ב-Android פותחים את הדף ב-Chrome.</div>`;
+  }
+  if (state.pushCode) {
+    return `<div class="install notify"><div>ההתראות הופעלו בטלפון הזה. כדי לחבר אותן, שלח את הקוד הזה ל-Claude:
+      <textarea id="push-code" readonly>${esc(state.pushCode)}</textarea></div><button id="push-copy">${state.pushCopied ? "הועתק" : "העתקת הקוד"}</button></div>`;
+  }
+  return `<div class="install notify">התראות על ידיעות דחופות, ישירות לטלפון הזה. <button id="push-on">הפעלה</button>${state.pushNote ? `<div>${esc(state.pushNote)}</div>` : ""}</div>`;
+}
+const b64urlBytes = s => Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/") + "=".repeat((4 - s.length % 4) % 4)), c => c.charCodeAt(0));
+async function enableNotifications() {
+  try {
+    if (await Notification.requestPermission() !== "granted") {
+      state.pushNote = "ההרשאה להתראות לא ניתנה. אפשר לאשר אותה בהגדרות האתר בדפדפן ולנסות שוב.";
+      return renderFoot();
+    }
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription()
+      || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64urlBytes(VAPID_PUBLIC) });
+    state.pushCode = JSON.stringify(sub.toJSON());
+  } catch (e) {
+    state.pushNote = "לא הצלחתי להפעיל התראות: " + e.message;
+  }
+  renderFoot();
 }
 
 // Rebuild the view, keeping the reader's place when stories are added above what they're reading.
@@ -494,6 +528,12 @@ function render({ keepPlace = false } = {}) {
 }
 
 document.addEventListener("click", e => {
+  if (e.target.closest("#push-on")) { enableNotifications(); return; }
+  if (e.target.closest("#push-copy")) {
+    const done = () => { state.pushCopied = true; renderFoot(); };
+    navigator.clipboard?.writeText(state.pushCode).then(done, () => { document.getElementById("push-code").select(); });
+    return;
+  }
   if (e.target.closest("#install") && state.installEvent) {
     state.installEvent.prompt();
     state.installEvent.userChoice.finally(() => { state.installEvent = null; renderFoot(); });

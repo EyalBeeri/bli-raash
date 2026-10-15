@@ -1,7 +1,7 @@
 // Offline layer for the installed app: the page and the last feed stay readable without a connection.
 // The network is tried first so a good connection always shows the newest version; on a weak one we
 // fall back to the saved copy after a few seconds instead of leaving a blank screen.
-const CACHE = "bli-raash-v5";
+const CACHE = "bli-raash-v6";
 const SHELL = ["./", "feed.json", "manifest.webmanifest", "icons/icon-192.png", "icons/apple-touch-icon.png"];
 const NETWORK_WAIT_MS = 4000;
 
@@ -41,5 +41,30 @@ self.addEventListener("fetch", event => {
     const copy = await saved();
     if (copy) return copy;
     return network;  // nothing saved yet: keep waiting for the network (or its error)
+  })());
+});
+
+// Notifications pushed by the feed: urgent stories, and alerts if the feed stalls (see notify.py).
+self.addEventListener("push", event => {
+  let d = {};
+  try { d = event.data ? event.data.json() : {}; } catch (e) { d = { body: event.data ? event.data.text() : "" }; }
+  event.waitUntil(self.registration.showNotification(d.title || "בלי רעש", {
+    body: d.body || "", tag: d.tag, dir: "rtl", lang: "he",
+    icon: "icons/icon-192.png", badge: "icons/badge-96.png",
+    data: { url: d.url || "./" },
+  }));
+});
+
+// Tapping a notification opens the page (or brings it forward); links elsewhere open in a new window.
+self.addEventListener("notificationclick", event => {
+  event.notification.close();
+  const url = new URL(event.notification.data?.url || "./", self.registration.scope).href;
+  event.waitUntil((async () => {
+    if (url.startsWith(self.registration.scope)) {
+      const open = (await self.clients.matchAll({ type: "window", includeUncontrolled: true }))
+        .find(c => c.url.startsWith(self.registration.scope));
+      if (open) return open.focus();
+    }
+    return self.clients.openWindow(url);
   })());
 });
