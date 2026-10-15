@@ -64,14 +64,8 @@ button { font: inherit; color: inherit; }
 .strip > .status { padding-inline-end: 0; }
 .status.stale { color: var(--red); }
 
-/* The two views. Only this bar stays on screen while reading. */
-.views { position: sticky; top: 0; z-index: 5; background: var(--paper); border-bottom: 1px solid var(--rule); }
-.views-in { max-width: 620px; margin: 0 auto; padding-inline: 20px; display: flex; gap: 22px; }
-.view { border: 0; background: none; padding: 12px 0 9px; margin-bottom: -1px; border-bottom: 2px solid transparent; font-weight: 600; font-size: 0.95rem; color: var(--ink-3); cursor: pointer; }
-.view[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink); }
-
 /* The opening line answers one question: did anything happen since I last looked? */
-.hello { padding-top: 28px; }
+.hello { padding-top: 32px; }
 .hello h2 { font-family: var(--head); font-weight: 900; font-size: 2.6rem; line-height: 1.04; margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
 .hello h2 .soft { font-weight: 300; display: block; }
 
@@ -108,23 +102,10 @@ button { font: inherit; color: inherit; }
 .end .msg { grid-column: 2; padding-top: 18px; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
 .end strong { font-family: var(--head); font-weight: 800; font-size: 1.25rem; }
 .end p { margin: 0; color: var(--ink-2); font-size: 0.95rem; }
-.link-btn { border: 0; background: none; padding: 4px 0; color: var(--ink); font-weight: 600; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
 
 .empty { padding-block: 34px; color: var(--ink-2); }
 .empty strong { display: block; color: var(--ink); font-family: var(--head); font-weight: 800; font-size: 1.3rem; }
 
-/* What was filtered out, and why. */
-.cuts-intro { padding-block: 26px 12px; margin: 0; color: var(--ink-2); }
-.cats { display: flex; flex-wrap: wrap; gap: 0 16px; padding-bottom: 10px; margin-bottom: 4px; border-bottom: 1px solid var(--ink); }
-.cat { border: 0; background: none; padding: 6px 0; font-size: 0.9rem; font-weight: 600; color: var(--ink-3); cursor: pointer; font-variant-numeric: tabular-nums; }
-.cat.waiting { color: var(--ink); }
-.cat[aria-pressed="true"] { color: var(--ink); text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 6px; }
-.cut { padding-block: 12px; display: flex; flex-direction: column; gap: 2px; }
-.cut + .cut { border-top: 1px solid var(--rule); }
-.cut a, .cut .t { text-decoration: none; font-family: var(--head); font-weight: 500; font-size: 1.05rem; line-height: 1.45; }
-.cut a:hover { text-decoration: underline; }
-.cut .why { font-size: 0.82rem; color: var(--ink-3); }
-.cut .why b { font-weight: 600; color: var(--ink-2); }
 
 footer { padding-block: 34px calc(36px + env(safe-area-inset-bottom, 0px)); color: var(--ink-3); font-size: 0.85rem; display: flex; flex-direction: column; gap: 10px; }
 .outlets { display: flex; flex-wrap: wrap; gap: 2px 14px; font-variant-numeric: tabular-nums; }
@@ -149,21 +130,14 @@ footer { padding-block: 34px calc(36px + env(safe-area-inset-bottom, 0px)); colo
   </header>
   <div class="strip"><span id="civil"></span><span id="hebrew"></span><span class="status" id="status">מתחבר…</span></div>
 </div>
-<nav class="views" role="tablist" aria-label="תצוגה">
-  <div class="views-in">
-    <button class="view" role="tab" id="tab-news" aria-selected="true" aria-controls="view" tabindex="0">חדשות</button>
-    <button class="view" role="tab" id="tab-cuts" aria-selected="false" aria-controls="view" tabindex="-1">מה נחתך</button>
-  </div>
-</nav>
 <main class="wrap">
-  <div id="view" role="tabpanel" aria-labelledby="tab-news">
+  <div id="view">
     <div class="empty"><strong>טוען את הידיעות</strong>רגע אחד.</div>
   </div>
 </main>
 <footer class="wrap" id="foot"></footer>
 
 <script>
-const WAITING = "ממתין למקור נוסף";
 const TZ = "Asia/Jerusalem";
 const hmFmt = new Intl.DateTimeFormat("he-IL", { timeZone: TZ, hour: "2-digit", minute: "2-digit", hour12: false });
 const dayKeyFmt = new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" });
@@ -172,9 +146,8 @@ const weekdayFmt = new Intl.DateTimeFormat("he-IL", { timeZone: TZ, weekday: "lo
 const civilFmt = new Intl.DateTimeFormat("he-IL", { timeZone: TZ, weekday: "long", day: "numeric", month: "long" });
 const hebrewFmt = new Intl.DateTimeFormat("he-IL-u-ca-hebrew", { timeZone: TZ, day: "numeric", month: "long", year: "numeric" });
 
-const state = { feed: null, filtered: null, tab: "news", cat: null, failed: false, sig: "", prevSeen: null,
+const state = { feed: null, failed: false, sig: "", prevSeen: null,
                 installEvent: null, installed: false, pendingReload: false };
-try { const t = localStorage.getItem("bli-tab"); if (t === "news" || t === "cuts") state.tab = t; } catch (e) {}
 // The reader's previous visit: stories since then are new, and the noise at the top of the line counts them.
 try { state.prevSeen = localStorage.getItem("bli-last-seen"); } catch (e) {}
 const markSeen = () => { try { localStorage.setItem("bli-last-seen", new Date().toISOString()); } catch (e) {} };
@@ -305,14 +278,16 @@ function storyHtml(s, top, last) {
   </article>`;
 }
 
+// How much was left out, in one sentence: the reassurance of a finite page, without a second feed to scroll.
+const SHORT = { "פשיעה ותאונות": "פשיעה ותאונות", "דעות ופרשנות": "דעות", "קמפיין וסקרים": "קמפיין הבחירות",
+  "השערות ודיווחים לא מאומתים": "השערות", "חדשות חוץ": "חדשות חוץ שגרתיות", "ספורט": "ספורט", "תרבות ופנאי": "תרבות",
+  "צרכנות ולייף סטייל": "צרכנות", "עסקים ושוק ההון": "עסקים" };
 function endLine() {
-  const items = state.filtered?.items || [];
-  const waiting = items.filter(i => i.category === WAITING).length, cut = items.length - waiting;
-  const n = x => x.toLocaleString("he-IL");
-  if (cut && waiting) return `${n(cut)} דיווחים אחרים לא עברו את הסינון, ו-${n(waiting)} מחכים שמקור נוסף יאשר אותם.`;
-  if (cut) return `${n(cut)} דיווחים אחרים לא עברו את הסינון.`;
-  if (waiting) return `${n(waiting)} דיווחים מחכים שמקור נוסף יאשר אותם.`;
-  return "כל השאר לא עבר את הסינון.";
+  const c = state.feed?.cuts;
+  if (!c?.total) return "כל השאר לא עבר את הסינון.";
+  const top = Object.keys(c.by_category || {}).filter(k => SHORT[k]).slice(0, 3).map(k => SHORT[k]);
+  const list = top.length < 2 ? top.join("") : top.slice(0, -1).join(", ") + " ו" + top[top.length - 1];
+  return `${c.total.toLocaleString("he-IL")} דיווחים אחרים מהיממה האחרונה לא עברו את הסינון${list ? `, בעיקר ${list}` : ""}.`;
 }
 
 function renderNews() {
@@ -331,24 +306,8 @@ function renderNews() {
     if (d !== day) { out += `<div class="row day"><div class="margin">${esc(d)}</div></div>`; day = d; }
     out += storyHtml(s, i === 0, last);
   });
-  out += `<div class="row end"><div class="msg"><strong>זהו, עד כאן.</strong><p>${endLine()}</p>
-    <button class="link-btn" data-goto="cuts">מה נחתך ולמה</button></div></div></div>`;
+  out += `<div class="row end"><div class="msg"><strong>זהו, עד כאן.</strong><p>${endLine()}</p></div></div></div>`;
   return out;
-}
-
-function renderCuts() {
-  const items = [...(state.filtered?.items || [])].sort((a, b) => String(b.t).localeCompare(String(a.t)));
-  if (!items.length) return `<p class="cuts-intro">עוד לא נחתך כלום.</p>`;
-  const counts = new Map();
-  for (const it of items) counts.set(it.category, (counts.get(it.category) || 0) + 1);
-  const cats = [...counts].sort((a, b) => (a[0] === WAITING ? -1 : b[0] === WAITING ? 1 : b[1] - a[1]));
-  const shown = state.cat ? items.filter(i => i.category === state.cat) : items;
-  return `<p class="cuts-intro">כל מה שנחתך ביממה האחרונה, ולמה. ידיעה שדווחה רק בכלי תקשורת אחד מחכה כאן עד שמקור נוסף מאשר אותה.</p>
-    <div class="cats">${cats.map(([c, n]) => `<button class="cat${c === WAITING ? " waiting" : ""}" data-cat="${esc(c)}" aria-pressed="${state.cat === c}">${esc(c)} (${n})</button>`).join("")}</div>
-    <div>${shown.map(it => `<div class="cut">
-      ${isHttp(it.url) ? `<a href="${esc(it.url)}" target="_blank" rel="noopener">${esc(it.title)}</a>` : `<span class="t">${esc(it.title)}</span>`}
-      <span class="why"><bdi>${when(it.t)}</bdi>&rlm;, <bdi>${esc(it.source)}</bdi>&rlm;. <b>${esc(it.category)}</b>${it.reason ? `: <bdi>${esc(it.reason)}</bdi>` : ""}</span>
-    </div>`).join("")}</div>`;
 }
 
 // Masthead and dateline: the edition of the day, the date in both calendars, and when the feed was last checked.
@@ -389,22 +348,15 @@ function renderFoot() {
 
 // Rebuild the view, keeping the reader's place when stories are added above what they're reading.
 function render({ keepPlace = false } = {}) {
-  for (const t of ["news", "cuts"]) {
-    const b = document.getElementById("tab-" + t);
-    b.setAttribute("aria-selected", String(state.tab === t));
-    b.tabIndex = state.tab === t ? 0 : -1;
-  }
   const view = document.getElementById("view");
-  view.setAttribute("aria-labelledby", "tab-" + state.tab);
   let anchor = null;
-  if (keepPlace && state.tab === "news" && window.scrollY > 0) {
-    const barBottom = document.querySelector(".views").getBoundingClientRect().bottom;
+  if (keepPlace && window.scrollY > 0) {
     for (const a of view.querySelectorAll(".story")) {
       const r = a.getBoundingClientRect();
-      if (r.bottom > barBottom) { anchor = { id: a.dataset.id, top: r.top }; break; }
+      if (r.bottom > 0) { anchor = { id: a.dataset.id, top: r.top }; break; }
     }
   }
-  view.innerHTML = state.tab === "news" ? renderNews() : renderCuts();
+  view.innerHTML = renderNews();
   if (anchor) {
     const el = [...view.querySelectorAll(".story")].find(a => a.dataset.id === anchor.id);
     if (el) window.scrollBy(0, el.getBoundingClientRect().top - anchor.top);
@@ -413,36 +365,10 @@ function render({ keepPlace = false } = {}) {
   renderFoot();
 }
 
-function setTab(t, focus) {
-  state.tab = t;
-  try { localStorage.setItem("bli-tab", t); } catch (e) {}
-  render();
-  window.scrollTo(0, 0);
-  if (focus) document.getElementById("tab-" + t).focus();
-}
-
 document.addEventListener("click", e => {
-  const tab = e.target.closest(".view");
-  if (tab) { setTab(tab.id === "tab-cuts" ? "cuts" : "news"); return; }
-  const go = e.target.closest("[data-goto]");
-  if (go) { setTab(go.dataset.goto, true); return; }
-  const cat = e.target.closest(".cat");
-  if (cat) {
-    const c = cat.dataset.cat;
-    state.cat = state.cat === c ? null : c;
-    render();
-    [...document.querySelectorAll(".cat")].find(b => b.dataset.cat === c)?.focus();
-    return;
-  }
   if (e.target.closest("#install") && state.installEvent) {
     state.installEvent.prompt();
     state.installEvent.userChoice.finally(() => { state.installEvent = null; renderFoot(); });
-  }
-});
-document.querySelector(".views").addEventListener("keydown", e => {
-  if (e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "Home" || e.key === "End") {
-    e.preventDefault();
-    setTab(state.tab === "news" ? "cuts" : "news", true);
   }
 });
 
@@ -454,12 +380,11 @@ async function pull(name) {
 }
 
 const signature = () => [state.failed, state.prevSeen, (state.feed?.stories || []).map(s => s.id + s.updated).join(","),
-  (state.filtered?.items || []).length, state.filtered?.items?.[0]?.id].join("|");
+  state.feed?.cuts?.total].join("|");
 
 async function refresh(force) {
   if (document.hidden && !force) return;
   try { state.feed = await pull("feed.json"); state.failed = false; } catch (e) { if (!state.feed) state.failed = true; }
-  try { state.filtered = await pull("filtered.json"); } catch (e) {}
   const sig = signature();
   if (sig !== state.sig) { const first = !state.sig; state.sig = sig; render({ keepPlace: !first }); }
   else { renderStatus(); renderFoot(); }

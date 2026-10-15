@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>בלי רעש: מה נחתך</title>
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;800&family=Assistant:wght@400;600&display=swap">
+<style>
+/* Everything the editor cut in the last day, and why. Nothing on the main page links here: it is for checking
+   the filter (did something important get dropped?), not for reading. */
+:root { --paper: #FFFFFF; --ink: #1C2B5A; --ink-2: #4A577A; --ink-3: #687394; --rule: #E3E6EF; color-scheme: light; }
+@media (prefers-color-scheme: dark) {
+  :root { --paper: #1C2B5A; --ink: #F1F3F8; --ink-2: #C3CADB; --ink-3: #97A1BC; --rule: #2C3B69; color-scheme: dark; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Assistant", Arial, sans-serif; font-size: 16px; line-height: 1.6; }
+a { color: inherit; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+.wrap { max-width: 640px; margin: 0 auto; padding: 18px 20px 48px; }
+h1 { font-family: "Frank Ruhl Libre", serif; font-weight: 800; font-size: 1.8rem; margin: 0; border-bottom: 4px solid var(--ink); padding-bottom: 6px; }
+.intro { color: var(--ink-2); margin: 10px 0 14px; }
+.intro a { font-weight: 600; }
+.cats { display: flex; flex-wrap: wrap; gap: 0 16px; padding-bottom: 10px; border-bottom: 1px solid var(--ink); }
+.cat { border: 0; background: none; padding: 6px 0; font-size: 0.9rem; font-weight: 600; color: var(--ink-3); cursor: pointer; font-variant-numeric: tabular-nums; }
+.cat[aria-pressed="true"] { color: var(--ink); text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 6px; }
+.cut { padding-block: 10px; display: flex; flex-direction: column; gap: 2px; }
+.cut + .cut { border-top: 1px solid var(--rule); }
+.cut a, .cut .t { text-decoration: none; font-family: "Frank Ruhl Libre", serif; font-weight: 500; font-size: 1.05rem; line-height: 1.45; }
+.cut a:hover { text-decoration: underline; }
+.why { font-size: 0.82rem; color: var(--ink-3); }
+.why b { font-weight: 600; color: var(--ink-2); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>מה נחתך</h1>
+  <p class="intro">כל מה שנחתך ביממה האחרונה, ולמה. ידיעות שמחכות לאישור מכלי תקשורת מקבוצה נוספת מופיעות ראשונות. <a href="./">חזרה לחדשות</a></p>
+  <div id="list">טוען…</div>
+</div>
+<script>
+const WAITING = "ממתין למקור נוסף";
+const TZ = "Asia/Jerusalem";
+const hmFmt = new Intl.DateTimeFormat("he-IL", { timeZone: TZ, hour: "2-digit", minute: "2-digit", hour12: false });
+const dayKeyFmt = new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" });
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const isHttp = u => /^https?:\/\//.test(u || "");
+const fmt = (f, iso) => { try { return f.format(new Date(iso)); } catch (e) { return ""; } };
+const when = iso => (fmt(dayKeyFmt, iso) === fmt(dayKeyFmt, new Date().toISOString()) ? "היום" : "אתמול") + " ב-" + fmt(hmFmt, iso);
+let items = [], cat = null;
+
+function render() {
+  const counts = new Map();
+  for (const it of items) counts.set(it.category, (counts.get(it.category) || 0) + 1);
+  const cats = [...counts].sort((a, b) => (a[0] === WAITING ? -1 : b[0] === WAITING ? 1 : b[1] - a[1]));
+  const shown = cat ? items.filter(i => i.category === cat) : items;
+  document.getElementById("list").innerHTML = !items.length ? "עוד לא נחתך כלום." :
+    `<div class="cats">${cats.map(([c, n]) => `<button class="cat" data-cat="${esc(c)}" aria-pressed="${cat === c}">${esc(c)} (${n})</button>`).join("")}</div>` +
+    shown.map(it => `<div class="cut">
+      ${isHttp(it.url) ? `<a href="${esc(it.url)}" target="_blank" rel="noopener">${esc(it.title)}</a>` : `<span class="t">${esc(it.title)}</span>`}
+      <span class="why"><bdi>${when(it.t)}</bdi>&rlm;, <bdi>${esc(it.source)}</bdi>&rlm;. <b>${esc(it.category)}</b>${it.reason ? `: <bdi>${esc(it.reason)}</bdi>` : ""}</span>
+    </div>`).join("");
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest(".cat");
+  if (!b) return;
+  cat = cat === b.dataset.cat ? null : b.dataset.cat;
+  render();
+  [...document.querySelectorAll(".cat")].find(x => x.dataset.cat === b.dataset.cat)?.focus();
+});
+fetch("filtered.json", { cache: "no-cache" }).then(r => r.json()).then(d => {
+  // Waiting items first, then newest first.
+  items = (d.items || []).sort((a, b) => (b.category === WAITING) - (a.category === WAITING) || String(b.t).localeCompare(String(a.t)));
+  render();
+}).catch(() => { document.getElementById("list").textContent = "לא הצלחתי לטעון את הרשימה."; });
+</script>
+</body>
+</html>

@@ -69,6 +69,11 @@ def build(con, health):
         cuts.append({"id": hashlib.sha1(r["url"].encode()).hexdigest()[:12], "t": store.item_time(r),
                      "source": r["source"], "title": r["title"][:160], "url": r["url"],
                      "category": r["cut_category"] or "אחר", "reason": (r["cut_reason"] or "")[:80]})
+    # The page ends with how much was left out; the full list lives in filtered.json for cuts.html.
+    by_cat = {}
+    for c in cuts:
+        by_cat[c["category"]] = by_cat.get(c["category"], 0) + 1
+    feed["cuts"] = {"total": len(cuts), "by_category": dict(sorted(by_cat.items(), key=lambda kv: -kv[1]))}
     filtered = {"updated": store.now_iso(), "items": waiting + cuts}
     while _size(filtered) > MAX_DOC_BYTES and filtered["items"]:
         del filtered["items"][-25:]
