@@ -120,7 +120,14 @@ details[open] > summary .more { transform: rotate(180deg); }
 .feed { position: relative; }
 .inked { position: absolute; top: 64px; inset-inline-start: calc(var(--x) - 0.75px); width: 1.5px; height: 0; background: var(--ink); z-index: 1; pointer-events: none; }
 .node { z-index: 2; }
-.story > .margin, .story > details { opacity: var(--lamp, 1); transition: opacity 0.25s linear; }
+/* The reading lamp: a pool of light around the story in focus. Stories near it stay in full ink, and the light
+   falls off further away, to no less than 45%. The lifeline is inked down to the story in focus, whose dot grows. */
+.story > .margin, .story > details { transition: opacity 0.25s ease; }
+.feed.lamp .story > .margin, .feed.lamp .story > details { opacity: var(--lamp, 1); }
+.story .node { transition: background-color 0.8s ease, transform 0.3s ease; }
+.story.lit .node { transform: scale(1.45); }
+.inked { transition: height 0.3s ease; }
+@media (prefers-reduced-motion: reduce) { .story > .margin, .story > details, .story .node, .inked { transition: none; } }
 /* Older days fold into a single row; one with something unread in it opens by itself. */
 .day-group > summary { list-style: none; cursor: pointer; }
 .day-group > summary::-webkit-details-marker { display: none; }
@@ -410,16 +417,35 @@ const canClose = () => "Notification" in window && Notification.permission === "
 function lamp() {
   const feed = document.querySelector(".feed");
   if (!feed) return;
-  const vh = innerHeight, focus = vh * 0.42, still = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  for (const el of feed.querySelectorAll(".story")) {
-    const r = el.getBoundingClientRect();
-    if (!r.height) continue;   // inside a closed day
-    const d = focus < r.top ? r.top - focus : focus > r.bottom ? focus - r.bottom : 0;
-    el.style.setProperty("--lamp", still ? "1" : (1 - 0.55 * Math.min(1, d / (vh * 0.6))).toFixed(2));
+  const rows = [...feed.querySelectorAll(".story")].filter(el => el.getBoundingClientRect().height);
+  if (!rows.length) return;
+  // The reading point is a third of the way down the screen. Before the reader reaches the first story it is
+  // the first story; once the page can't scroll further it is the last one.
+  const line = innerHeight * 0.33;
+  const atEnd = innerHeight + scrollY >= document.documentElement.scrollHeight - 4;
+  let lit = rows[0];
+  if (atEnd && scrollY > 0) lit = rows.at(-1);
+  else if (rows[0].getBoundingClientRect().top < line) {
+    let best = Infinity;
+    for (const el of rows) {
+      const r = el.getBoundingClientRect();
+      const d = line < r.top ? r.top - line : line > r.bottom ? line - r.bottom : 0;
+      if (d < best) { best = d; lit = el; }
+    }
   }
-  const fr = feed.getBoundingClientRect(), end = feed.querySelector(".end");
-  const max = end ? end.offsetTop + 30 - 64 : fr.height - 64;
-  feed.querySelector(".inked").style.height = Math.max(0, Math.min(max, focus - fr.top - 64)) + "px";
+  feed.classList.add("lamp");
+  const lr = lit.getBoundingClientRect(), center = (lr.top + lr.bottom) / 2;
+  const near = innerHeight * 0.16, far = innerHeight * 0.6;   // full light within `near`, dimmest at `far`
+  for (const el of rows) {
+    el.classList.toggle("lit", el === lit);
+    const r = el.getBoundingClientRect();
+    const d = center < r.top ? r.top - center : center > r.bottom ? center - r.bottom : 0;
+    el.style.setProperty("--lamp", d <= near ? "1" : Math.max(0.45, 1 - 0.55 * (d - near) / (far - near)).toFixed(2));
+  }
+  // The lifeline is inked down to the focused story's dot.
+  const node = lit.querySelector(".node");
+  const y = lit.getBoundingClientRect().top - feed.getBoundingClientRect().top + (node ? node.offsetTop + 5 : 0);
+  feed.querySelector(".inked").style.height = Math.max(0, y - 64) + "px";
 }
 let lampQueued = false;
 const queueLamp = () => { if (!lampQueued) { lampQueued = true; requestAnimationFrame(() => { lampQueued = false; lamp(); }); } };
@@ -454,19 +480,20 @@ function renderNews() {
   out += `<div class="feed"><div class="lead${fresh ? "" : " quiet"}" aria-hidden="true"><svg viewBox="0 0 24 64">
     <path d="${noisePath(lineAmp)}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>`;
   out += `<div class="inked" aria-hidden="true"></div>`;
-  const groups = [];
-  for (const s of stories) {
+  const dayAgo = Date.now() - 864e5;
+  const recent = stories.filter(s => ms(s.updated) >= dayAgo), older = stories.filter(s => ms(s.updated) < dayAgo);
+  let day = "היום", first = true;
+  for (const s of recent) {
     const d = dayLabel(s.updated);
-    if (groups.at(-1)?.label !== d) groups.push({ label: d, items: [] });
-    groups.at(-1).items.push(s);
+    if (d !== day) { out += `<div class="row day"><div class="margin">${esc(d)}</div></div>`; day = d; }
+    out += storyHtml(s, first);
+    first = false;
   }
-  let first = true;
-  for (const g of groups) {
-    const rows = g.items.map(s => { const h = storyHtml(s, first); first = false; return h; }).join("");
-    if (g.label === "היום") { out += rows; continue; }
-    const unread = g.items.filter(s => !isSeen(s)).length, n = g.items.length;
-    out += `<details class="day-group"${unread ? " open" : ""}><summary class="row day"><div class="margin">${esc(g.label)}</div>
-      <div class="count">${n === 1 ? "ידיעה אחת" : `${n} ידיעות`}${unread ? `, ${unread === 1 ? "אחת חדשה" : `${unread} חדשות`}` : ""}${MORE}</div></summary>${rows}</details>`;
+  if (older.length) {
+    const unread = older.filter(s => !isSeen(s)).length, n = older.length;
+    const rows = older.map(s => { const h = storyHtml(s, first); first = false; return h; }).join("");
+    out += `<details class="day-group"${unread ? " open" : ""}><summary class="row day"><div class="margin"></div>
+      <div class="count">מוקדם יותר: ${n === 1 ? "ידיעה אחת" : `${n} ידיעות`}${unread ? `, ${unread === 1 ? "אחת חדשה" : `${unread} חדשות`}` : ""}${MORE}</div></summary>${rows}</details>`;
   }
   out += `<div class="row end"><div class="msg"><strong>זהו, עד כאן.</strong><p>${endLine()}</p></div></div></div>`;
   return out;
