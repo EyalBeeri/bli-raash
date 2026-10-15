@@ -1,7 +1,7 @@
 // Offline layer for the installed app: the page and the last feed stay readable without a connection.
 // The network is tried first so a good connection always shows the newest version; on a weak one we
 // fall back to the saved copy after a few seconds instead of leaving a blank screen.
-const CACHE = "bli-raash-v4";
+const CACHE = "bli-raash-v5";
 const SHELL = ["./", "feed.json", "manifest.webmanifest", "icons/icon-192.png", "icons/apple-touch-icon.png"];
 const NETWORK_WAIT_MS = 4000;
 
