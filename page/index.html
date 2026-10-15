@@ -5,8 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>בלי רעש</title>
 <meta name="description" content="רק מה שחשוב לדעת: ידיעות מכמה כלי תקשורת, בלי דרמה ובלי רעש.">
-<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#1C2B5A" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#FFFFFF" id="theme-color">
+<script>
+  // Light is the default whatever the system says; dark only if the reader chose it (the toggle in the masthead).
+  try { if (localStorage.getItem("bli-theme") === "dark") document.documentElement.dataset.theme = "dark"; } catch (e) {}
+</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -29,13 +32,6 @@
   --body: "Assistant", "Segoe UI", "Arial Hebrew", Arial, sans-serif;
   color-scheme: light;
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --paper: #1C2B5A; --ink: #F1F3F8; --ink-2: #C3CADB; --ink-3: #97A1BC;
-    --line: #4A5A86; --rule: #2C3B69; --red: #FF8576;
-    color-scheme: dark;
-  }
-}
 :root[data-theme="dark"] {
   --paper: #1C2B5A; --ink: #F1F3F8; --ink-2: #C3CADB; --ink-3: #97A1BC;
   --line: #4A5A86; --rule: #2C3B69; --red: #FF8576;
@@ -55,6 +51,11 @@ button { font: inherit; color: inherit; }
 .mast { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: calc(16px + env(safe-area-inset-top, 0px)); }
 .name { font-family: var(--mast); font-weight: 400; font-size: 3.1rem; line-height: 1; margin: 0; letter-spacing: -0.01em; }
 /* White on a slanted black block, the way the papers stamped "מהדורה שלישית". */
+.mast-end { display: flex; align-items: center; gap: 10px; }
+/* Day and night: a small switch beside the stamp. */
+.mode { border: 0; background: none; padding: 6px; margin-inline-end: -6px; color: var(--ink-2); cursor: pointer; display: grid; place-items: center; }
+.mode svg { width: 20px; height: 20px; }
+.mode:hover { color: var(--ink); }
 .stamp { background: var(--ink); color: var(--paper); font-family: var(--head); font-weight: 900; font-size: 0.95rem; padding: 3px 16px; clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%); white-space: nowrap; }
 .strip { margin-top: 12px; border-top: 4px solid var(--ink); border-bottom: 1px solid var(--ink); display: flex; flex-wrap: wrap; font-size: 0.85rem; color: var(--ink-2); }
 .strip > span { padding: 4px 12px; }
@@ -126,7 +127,10 @@ footer { padding-block: 34px calc(36px + env(safe-area-inset-bottom, 0px)); colo
 <div class="wrap">
   <header class="mast">
     <h1 class="name">בלי רעש</h1>
-    <span class="stamp" id="stamp" hidden></span>
+    <div class="mast-end">
+      <span class="stamp" id="stamp" hidden></span>
+      <button class="mode" id="mode" type="button"></button>
+    </div>
   </header>
   <div class="strip"><span id="civil"></span><span id="hebrew"></span><span class="status" id="status">מתחבר…</span></div>
 </div>
@@ -326,6 +330,23 @@ function renderStatus() {
   el.className = "status" + (stale ? " stale" : "");
   el.textContent = stale ? `לא התעדכן מאז ${at}` : `נבדק ${at}`;
 }
+
+const MOON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>';
+const SUN = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+function applyTheme(dark) {
+  document.documentElement.dataset.theme = dark ? "dark" : "light";
+  document.getElementById("theme-color").content = dark ? "#1C2B5A" : "#FFFFFF";
+  const b = document.getElementById("mode");
+  b.innerHTML = dark ? SUN : MOON;
+  b.setAttribute("aria-label", dark ? "תצוגה בהירה" : "תצוגה כהה");
+  b.title = b.getAttribute("aria-label");
+}
+applyTheme(document.documentElement.dataset.theme === "dark");
+document.getElementById("mode").addEventListener("click", () => {
+  const dark = document.documentElement.dataset.theme !== "dark";
+  applyTheme(dark);
+  try { localStorage.setItem("bli-theme", dark ? "dark" : "light"); } catch (e) {}
+});
 
 const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 const onPhone = matchMedia("(pointer: coarse)").matches;
