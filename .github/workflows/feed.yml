@@ -34,6 +34,7 @@ jobs:
         id: run
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
         run: python cloud_run.py
       - name: Save state
         if: always()

@@ -1,0 +1,24 @@
+# Hourly: if the live page stopped updating, send a phone notification (see watchdog.py).
+# Run it by hand with "test" to send a test notification.
+name: watchdog
+on:
+  schedule:
+    - cron: "41 * * * *"
+  workflow_dispatch:
+    inputs:
+      test:
+        description: "Send a test notification"
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the live page
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: python3 watchdog.py ${{ inputs.test && '--test' || '' }}
