@@ -30,9 +30,13 @@ def connect():
     CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT);
     """)
     # touched = last time any outlet reported on the story (updates and attaches); keeps follow-ups in context.
-    if "touched" not in {r[1] for r in con.execute("PRAGMA table_info(stories)")}:
+    cols = {r[1] for r in con.execute("PRAGMA table_info(stories)")}
+    if "touched" not in cols:
         con.execute("ALTER TABLE stories ADD COLUMN touched TEXT")
-        con.commit()
+    # clean = written under the rule that outlets aren't named in the text; older stories get rewritten once.
+    if "clean" not in cols:
+        con.execute("ALTER TABLE stories ADD COLUMN clean INTEGER DEFAULT 0")
+    con.commit()
     return con
 
 

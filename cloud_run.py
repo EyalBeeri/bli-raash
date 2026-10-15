@@ -59,6 +59,12 @@ def main():
             log(f"editor error: {type(e).__name__}: {str(e)[:300]}")
             break
 
+    if can_edit:
+        try:
+            editor.rewrite_old(con, log=log)
+        except Exception as e:
+            log(f"rewrite error: {type(e).__name__}: {str(e)[:300]}")
+
     waiting = con.execute("SELECT COUNT(*) FROM items WHERE status='new'").fetchone()[0]
     if waiting:
         log(f"still waiting for the editor: {waiting} items")

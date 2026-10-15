@@ -1,5 +1,6 @@
 """The editor step: one headless Claude call decides what each new item is and writes the stories."""
 import json
+import re
 import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
@@ -32,7 +33,8 @@ UNCONFIRMED REPORTS are items cut earlier because only one outlet reported them.
 
 Then, in stories, output one entry for every new key and for every existing story that received a material new fact, with its complete current text (not a diff): headline, summary, topic, urgent.
 - When updating an existing story, rewrite it to the current state of affairs; keep it as short as before.
-- Use only facts from the items and the existing story. Never invent or infer facts. Attribute claims by outlet or speaker.
+- Use only facts from the items and the existing story. Never invent or infer facts.
+- Attribute a claim to the speaker or body that made it ("צה"ל מסר", "נתניהו אמר"). Never name the outlets in a headline or summary: the page already lists the outlets under every story, so "לפי ynet" only adds noise. The one exception: when outlets give different versions of a fact, say who reported which.
 - Many outlets covering something is not a reason to include it.
 - All text is Hebrew.
 
@@ -229,7 +231,7 @@ def run_once(con, log=print):
                 w = written[key]
                 # An item processed late can carry a publish time older than the story; it still moves the story up.
                 upd = latest if latest > s["updated"] else store.now_iso()
-                con.execute("""UPDATE stories SET headline=?, summary=?, topic=?, urgent=?,
+                con.execute("""UPDATE stories SET headline=?, summary=?, topic=?, urgent=?, clean=1,
                                updated=?, touched=?, updates=updates+1, sources=? WHERE id=?""",
                             (w["headline"], w["summary"], w["topic"],
                              int(w["urgent"]), upd, store.now_iso(), json.dumps(srcs, ensure_ascii=False), key))
@@ -247,8 +249,8 @@ def run_once(con, log=print):
             w = written[key]
             sid = key_to_id.setdefault(key, f"s{ts}{len(key_to_id)}")
             created = min(store.item_time(it) for it in its)
-            con.execute("""INSERT INTO stories(id, headline, summary, action, topic, impact, urgent, created, updated, touched, sources)
-                           VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+            con.execute("""INSERT INTO stories(id, headline, summary, action, topic, impact, urgent, created, updated, touched, sources, clean)
+                           VALUES (?,?,?,?,?,?,?,?,?,?,?,1)""",
                         (sid, w["headline"], w["summary"], "", w["topic"], "[]",   # action/impact: retired, columns kept
                          int(w["urgent"]), created, latest, store.now_iso(), json.dumps(new_sources, ensure_ascii=False)))
         for it in its:
@@ -261,6 +263,48 @@ def run_once(con, log=print):
     log(f"editor: {total} items, {len(drops)} dropped by triage; {len(items)} edited -> {n_story} in stories, {len(decided) - n_story} cut, "
         f"{len(items) - len(decided)} undecided; {len(written)} stories written; cost ${cost or 0:.3f}")
     return len(items)
+
+
+# Outlet names as they appear in story text. "דבר" is left out on purpose: it is an everyday word.
+OUTLET_WORDS = ["ynet", "הארץ", "ישראל היום", "מעריב", "כאן", "וואלה", "N12", "גלובס", "Times of Israel", "ערוץ 12", "ערוץ 13"]
+_OUTLET_RE = re.compile(r"(?<!\w)(?:ב-|ל-|ו|ב)?(?:%s)(?!\w)" % "|".join(map(re.escape, OUTLET_WORDS)))
+
+REWRITE_SYSTEM = """You edit "בלי רעש", a calm Hebrew news feed. The page lists the outlets that reported each story under it, so naming them inside the text ("לפי ynet", "לפי כאן וגלובס", "דווח ב-N12", "הדיווח הופיע ב-ynet") is noise.
+
+For every story below, return its headline and summary with those outlet attributions removed. Change as little as possible: delete the attribution, or reword the clause around it so the Hebrew stays natural. Keep every fact, number and quote, and keep attribution to speakers and bodies ("צה"ל מסר", "נתניהו אמר", "לפי משרד הבריאות", "לפי רויטרס"). If the text says that outlets gave different versions of a fact, keep the outlet names for those versions. Never add facts. Return every story, unchanged if it has nothing to remove."""
+
+REWRITE_SCHEMA = {"type": "object", "properties": {"stories": {"type": "array", "items": {"type": "object", "properties": {
+    "id": {"type": "string"}, "headline": {"type": "string"}, "summary": {"type": "string"},
+}, "required": ["id", "headline", "summary"]}}}, "required": ["stories"]}
+
+
+def rewrite_old(con, log=print, batch=30):
+    """Stories written before the no-outlet-names rule get their text rewritten, once each. Returns how many changed."""
+    since = (datetime.now(timezone.utc) - timedelta(hours=CONTEXT_HOURS)).isoformat(timespec="seconds")
+    rows = con.execute("SELECT id, headline, summary FROM stories WHERE COALESCE(clean, 0)=0 AND updated >= ? "
+                       "ORDER BY updated DESC LIMIT ?", (since, batch)).fetchall()
+    todo = {r["id"]: r for r in rows if _OUTLET_RE.search(r["headline"] + " " + r["summary"])}
+    changed, cost = 0, 0
+    if todo:
+        lines = [f"{r['id']} | {r['headline']} | {r['summary']}" for r in todo.values()]
+        out, cost = _claude_json(MODEL, REWRITE_SYSTEM, "STORIES (id | headline | summary):\n" + "\n".join(lines),
+                                 REWRITE_SCHEMA, "Rewrite the stories according to your instructions.")
+        for s in out["stories"]:
+            r = todo.get(s.get("id"))
+            # An unknown id or a suspiciously short rewrite keeps the old text.
+            if not r or not s.get("headline") or len(s.get("summary", "")) < 0.5 * len(r["summary"]):
+                continue
+            if (s["headline"], s["summary"]) != (r["headline"], r["summary"]):
+                con.execute("UPDATE stories SET headline=?, summary=? WHERE id=?", (s["headline"], s["summary"], r["id"]))
+                changed += 1
+    # Every story looked at is done, rewritten or not, so no story is paid for twice.
+    ids = [r["id"] for r in rows]
+    if ids:
+        con.execute("UPDATE stories SET clean=1 WHERE id IN (%s)" % ",".join("?" * len(ids)), ids)
+    con.commit()
+    if todo:
+        log(f"rewrite: {len(todo)} older stories named outlets, {changed} rewritten; cost ${cost or 0:.3f}")
+    return changed
 
 
 def _note_attempt(con, items):
