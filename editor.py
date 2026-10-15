@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+import sources
 import store
 
 ROOT = Path(__file__).parent
@@ -236,12 +237,12 @@ def run_once(con, log=print):
                             (w["headline"], w["summary"], w["topic"],
                              int(w["urgent"]), upd, store.now_iso(), json.dumps(srcs, ensure_ascii=False), key))
             else:                # attach: same facts, another outlet
-                # A story becomes visible once a second outlet confirms it; show it at the confirmation time.
+                # A story becomes visible once it is confirmed (sources.confirmed); show it at the confirmation time.
                 before = {x["name"] for x in s["sources"]}
                 after = {x["name"] for x in srcs}
                 # A confirming item processed late can carry an older time; the story still surfaces now.
                 confirmed_at = latest if latest > s["updated"] else store.now_iso()
-                upd = confirmed_at if len(before) < 2 <= len(after) else s["updated"]
+                upd = confirmed_at if not sources.confirmed(before) and sources.confirmed(after) else s["updated"]
                 con.execute("UPDATE stories SET sources=?, touched=?, updated=? WHERE id=?",
                             (json.dumps(srcs, ensure_ascii=False), store.now_iso(), upd, key))
             sid = key

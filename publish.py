@@ -33,12 +33,18 @@ def _size(doc):
     return len(json.dumps(doc, ensure_ascii=False).encode())
 
 
-MIN_OUTLETS = 2   # a story is shown only once at least this many different outlets reported it (Eyal's rule)
 WAITING = "ממתין למקור נוסף"
 
 
 def outlets(story):
     return {x["name"] for x in story["sources"]}
+
+
+def _waiting_reason(names):
+    names = sorted(names)
+    if len(names) == 1:
+        return f"מקור יחיד עד עכשיו: {names[0]}"
+    return f"עד עכשיו רק {', '.join(names)}; מחכה לכלי תקשורת מקבוצה אחרת"
 
 
 def build(con, health):
@@ -47,12 +53,12 @@ def build(con, health):
     for s in stories:
         for k in ("touched", "action", "impact"):   # internal / retired fields stay out of the public JSON
             s.pop(k, None)
-    shown = [s for s in stories if len(outlets(s)) >= MIN_OUTLETS]
-    # Single-outlet stories wait in the cut list until a second outlet reports them.
-    waiting = [{"id": "w" + s["id"], "t": s["updated"], "source": next(iter(outlets(s)), ""), "title": s["headline"],
+    shown = [s for s in stories if sources.confirmed(outlets(s))]
+    # Unconfirmed stories (one outlet, or one owner group) wait in the cut list until another group reports them.
+    waiting = [{"id": "w" + s["id"], "t": s["updated"], "source": next(iter(sorted(outlets(s))), ""), "title": s["headline"],
                 "url": s["sources"][0]["url"] if s["sources"] else "", "category": WAITING,
-                "reason": f"מקור יחיד עד עכשיו: {next(iter(outlets(s)), '')}"}
-               for s in stories if len(outlets(s)) < MIN_OUTLETS and s["updated"] >= _ago(CUTS_HOURS, 30)]
+                "reason": _waiting_reason(outlets(s))}
+               for s in stories if not sources.confirmed(outlets(s)) and s["updated"] >= _ago(CUTS_HOURS, 30)]
     feed = {"updated": store.now_iso(), "stories": shown, "health": health}
     while _size(feed) > MAX_DOC_BYTES and feed["stories"]:
         feed["stories"].pop()

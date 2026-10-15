@@ -177,7 +177,22 @@ SOURCES = [
     ("גלובס", rss, "https://www.globes.co.il/webservice/rss/rssfeeder.asmx/FeederNode?iID=2"),
     ("דבר", rss, "https://www.davar1.co.il/feed/"),
     ("Times of Israel", rss, "https://www.timesofisrael.com/feed/"),
+    ("TheMarker", rss, "https://www.themarker.com/srv/tm-all-articles"),
 ]
+
+# Who owns each outlet. A story is confirmed by owner groups, not by outlets: Maariv and Walla share an owner,
+# so the two of them alone count once. "Poles" are groups whose owner or line declares a side; at least one
+# confirming group must not be one, so two partisan outlets can't confirm each other (Eyal's rule, 2026-10-15).
+OWNER = {"ynet": "Yedioth", "ישראל היום": "Adelson", "מעריב": "Azur", "וואלה": "Azur", "N12": "Keshet",
+         "הארץ": "Haaretz", "TheMarker": "Haaretz", "גלובס": "Globes", "כאן": "Kan", "דבר": "Histadrut",
+         "Times of Israel": "Klarman"}
+POLES = {"Adelson", "Haaretz", "Histadrut"}
+
+
+def confirmed(outlet_names):
+    """True once a story was reported by at least two owner groups, at least one of them not a pole."""
+    groups = {OWNER.get(n, n) for n in outlet_names}
+    return len(groups) >= 2 and bool(groups - POLES)
 
 
 # Seconds between checks for sources that don't like frequent visits (default: every loop).

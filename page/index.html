@@ -320,7 +320,7 @@ function renderNews() {
   const last = lastVisit();
   let out = `<section class="hello"><h2>${heroLine(stories, last)}</h2></section>`;
   if (!stories.length) {
-    return out + `<div class="empty"><strong>${state.failed ? "אין חיבור כרגע" : "עוד אין ידיעות"}</strong>${state.failed ? "כשיחזור החיבור הדף יתעדכן לבד." : "ידיעות שדווחו בשני כלי תקשורת לפחות יופיעו כאן."}</div>`;
+    return out + `<div class="empty"><strong>${state.failed ? "אין חיבור כרגע" : "עוד אין ידיעות"}</strong>${state.failed ? "כשיחזור החיבור הדף יתעדכן לבד." : "ידיעות שדווחו בכלי תקשורת משתי קבוצות בעלות לפחות יופיעו כאן."}</div>`;
   }
   const fresh = last == null ? 0 : stories.filter(s => ms(s.updated) > last).length;
   out += `<div class="feed"><div class="lead${fresh ? "" : " quiet"}" aria-hidden="true"><svg viewBox="0 0 24 64">
@@ -376,7 +376,7 @@ function renderFoot() {
   const standalone = state.installed || matchMedia("(display-mode: standalone)").matches || navigator.standalone;
   let html = "";
   if (h.length) {
-    html += `<div>הידיעות נאספות מ-${h.length} כלי תקשורת ונבדקות כל כמה דקות. ידיעה מופיעה רק כשלפחות שניים מהם דיווחו עליה.</div>
+    html += `<div>הידיעות נאספות מ-${h.length} כלי תקשורת ונבדקות כל כמה דקות. ידיעה מופיעה רק כשדיווחו עליה כלי תקשורת משתי קבוצות בעלות לפחות.</div>
       <div class="outlets">${h.map(x => `<span class="${x.ok ? "" : "bad"}" title="${esc(x.error || "")}"><bdi>${esc(x.source)}</bdi>${x.ok ? (x.newest ? ", " + ago(x.newest) : "") : ", תקלה"}</span>`).join("")}</div>`;
   }
   if (!standalone) {
