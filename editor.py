@@ -30,7 +30,7 @@ For each new item (by its index i) choose exactly one action:
 
 UNCONFIRMED REPORTS are items cut earlier because only one outlet reported them. When a new item from a different outlet reports the same thing, the report is now confirmed: make it a story and list the report's id (u0, u1, ...) in that story's confirms.
 
-Then, in stories, output one entry for every new key and for every existing story that received a material new fact, with its complete current text (not a diff): headline, summary, action ("" if there is nothing for the reader to do), topic, impact (one or more of act/state/lasting), urgent.
+Then, in stories, output one entry for every new key and for every existing story that received a material new fact, with its complete current text (not a diff): headline, summary, topic, urgent.
 - When updating an existing story, rewrite it to the current state of affairs; keep it as short as before.
 - Use only facts from the items and the existing story. Never invent or infer facts. Attribute claims by outlet or speaker.
 - Many outlets covering something is not a reason to include it.
@@ -53,12 +53,10 @@ SCHEMA = {
             "key": {"type": "string"},
             "headline": {"type": "string"},
             "summary": {"type": "string"},
-            "action": {"type": "string"},
             "topic": {"type": "string", "enum": TOPICS},
-            "impact": {"type": "array", "items": {"type": "string", "enum": ["act", "state", "lasting"]}},
             "urgent": {"type": "boolean"},
             "confirms": {"type": "array", "items": {"type": "string"}},
-        }, "required": ["key", "headline", "summary", "action", "topic", "impact", "urgent"]}},
+        }, "required": ["key", "headline", "summary", "topic", "urgent"]}},
     },
     "required": ["items", "stories"],
 }
@@ -231,9 +229,9 @@ def run_once(con, log=print):
                 w = written[key]
                 # An item processed late can carry a publish time older than the story; it still moves the story up.
                 upd = latest if latest > s["updated"] else store.now_iso()
-                con.execute("""UPDATE stories SET headline=?, summary=?, action=?, topic=?, impact=?, urgent=?,
+                con.execute("""UPDATE stories SET headline=?, summary=?, topic=?, urgent=?,
                                updated=?, touched=?, updates=updates+1, sources=? WHERE id=?""",
-                            (w["headline"], w["summary"], w["action"], w["topic"], json.dumps(w["impact"]),
+                            (w["headline"], w["summary"], w["topic"],
                              int(w["urgent"]), upd, store.now_iso(), json.dumps(srcs, ensure_ascii=False), key))
             else:                # attach: same facts, another outlet
                 # A story becomes visible once a second outlet confirms it; show it at the confirmation time.
@@ -251,7 +249,7 @@ def run_once(con, log=print):
             created = min(store.item_time(it) for it in its)
             con.execute("""INSERT INTO stories(id, headline, summary, action, topic, impact, urgent, created, updated, touched, sources)
                            VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
-                        (sid, w["headline"], w["summary"], w["action"], w["topic"], json.dumps(w["impact"]),
+                        (sid, w["headline"], w["summary"], "", w["topic"], "[]",   # action/impact: retired, columns kept
                          int(w["urgent"]), created, latest, store.now_iso(), json.dumps(new_sources, ensure_ascii=False)))
         for it in its:
             con.execute("UPDATE items SET status='story', story_id=?, processed_at=? WHERE url=?",

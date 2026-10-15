@@ -45,7 +45,8 @@ def build(con, health):
     stories = [store.story_dict(r) for r in con.execute(
         "SELECT * FROM stories WHERE updated >= ? ORDER BY updated DESC LIMIT 200", (_ago(FEED_HOURS, 30),))]
     for s in stories:
-        s.pop("touched", None)
+        for k in ("touched", "action", "impact"):   # internal / retired fields stay out of the public JSON
+            s.pop(k, None)
     shown = [s for s in stories if len(outlets(s)) >= MIN_OUTLETS]
     # Single-outlet stories wait in the cut list until a second outlet reports them.
     waiting = [{"id": "w" + s["id"], "t": s["updated"], "source": next(iter(outlets(s)), ""), "title": s["headline"],

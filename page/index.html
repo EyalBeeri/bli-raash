@@ -32,7 +32,7 @@
   --mint: #D3EEDD;   --mint-ink: #23553C;     /* changes the state of things */
   --lilac: #E6DEF7;  --lilac-ink: #45387A;    /* will matter for a while */
   --blush: #F8DCD2;  --blush-ink: #74372A;    /* topic */
-  --alarm: #B4382A;  --alarm-ink: #FFFFFF;    /* urgent */
+  --alarm: #B4382A;  --alarm-ink: #FFFFFF;    /* an outlet that stopped responding */
   --display: "Fredoka", "Assistant", "Segoe UI", "Arial Hebrew", Arial, sans-serif;
   --body: "Assistant", "Segoe UI", "Arial Hebrew", Arial, sans-serif;
   color-scheme: light;
@@ -94,22 +94,15 @@ main { max-width: 680px; margin: 0 auto; padding-inline: 14px; padding-block: 8p
 
 .story { padding-block: 20px; display: flex; flex-direction: column; gap: 8px; }
 .story + .story { border-top: 1px solid var(--rule); }
-.story.urgent { margin-inline: -20px; padding-inline: 20px; background: var(--rose-soft); }
-.sheet > .story.urgent:first-child { border-radius: 22px 22px 0 0; }
-.sheet > .story.urgent:last-child { border-radius: 0 0 22px 22px; }
-.sheet > .story.urgent:only-child { border-radius: 22px; }
 .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .time { font-weight: 700; font-size: 0.9rem; color: var(--ink-soft); font-variant-numeric: tabular-nums; margin-inline-end: 4px; }
+/* The topic is plain text, not a pill: filled pills are kept for the few things that are true of one story only. */
+.topic { font-size: 0.88rem; font-weight: 600; color: var(--muted); margin-inline-end: 4px; }
+.topic::before { content: "·"; margin-inline-end: 8px; }
 .pill { font-size: 0.8rem; font-weight: 600; line-height: 1.4; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
-.pill.topic { background: var(--blush); color: var(--blush-ink); }
-.pill.act { background: var(--butter); color: var(--butter-ink); }
-.pill.state { background: var(--mint); color: var(--mint-ink); }
-.pill.lasting { background: var(--lilac); color: var(--lilac-ink); }
-.pill.urgent { background: var(--alarm); color: var(--alarm-ink); }
+.pill.edited { background: var(--butter); color: var(--butter-ink); }
 .story h3 { font-family: var(--display); font-weight: 600; font-size: 1.32rem; line-height: 1.38; margin: 2px 0 0; text-wrap: balance; }
 .story p { margin: 0; }
-.todo { background: var(--butter); color: var(--butter-ink); border-radius: 14px; padding: 10px 14px; font-size: 1rem; }
-.todo b { margin-inline-end: 6px; }
 .byline { font-size: 0.88rem; color: var(--muted); }
 .byline a { color: var(--ink-soft); text-underline-offset: 3px; text-decoration-color: var(--rule); }
 .byline a:hover { text-decoration-color: currentColor; }
@@ -134,7 +127,7 @@ main { max-width: 680px; margin: 0 auto; padding-inline: 14px; padding-block: 8p
 .cat[aria-pressed="true"] { background: var(--ink); color: var(--sheet); }
 .cut { padding-block: 14px; display: flex; flex-direction: column; gap: 2px; }
 .cut + .cut { border-top: 1px solid var(--rule); }
-.cut a { text-decoration: none; font-size: 1rem; line-height: 1.5; }
+.cut a, .cut .t { text-decoration: none; font-size: 1rem; line-height: 1.5; }
 .cut a:hover { text-decoration: underline; }
 .cut .why { font-size: 0.82rem; color: var(--muted); }
 .cut .why b { font-weight: 600; color: var(--ink-soft); }
@@ -150,7 +143,6 @@ footer { max-width: 680px; margin: 0 auto; padding-inline: 20px; padding-block: 
   .hello p { font-size: 1.85rem; }
   .story h3 { font-size: 1.42rem; }
   .sheet { padding-inline: 28px; }
-  .story.urgent { margin-inline: -28px; padding-inline: 28px; }
 }
 .pill.new { background: var(--rose); color: var(--sheet); }
 </style>
@@ -180,13 +172,13 @@ footer { max-width: 680px; margin: 0 auto; padding-inline: 20px; padding-block: 
 <footer id="foot"></footer>
 
 <script>
-const IMPACT = { act: "משנה מה לעשות", state: "משנה את מצב הדברים", lasting: "ישפיע לאורך זמן" };
 const WAITING = "ממתין למקור נוסף";
 const TZ = "Asia/Jerusalem";
 const hmFmt = new Intl.DateTimeFormat("he-IL", { timeZone: TZ, hour: "2-digit", minute: "2-digit", hour12: false });
 const dayKeyFmt = new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" });
 const dayNameFmt = new Intl.DateTimeFormat("he-IL", { timeZone: TZ, weekday: "long", day: "numeric", month: "long" });
 const hourFmt = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, hour: "numeric", hour12: false });
+const weekdayFmt = new Intl.DateTimeFormat("he-IL", { timeZone: TZ, weekday: "long" });
 
 const state = { feed: null, filtered: null, tab: "news", cat: null, failed: false, sig: "", prevSeen: null,
                 installEvent: null, installed: false, pendingReload: false };
@@ -196,10 +188,11 @@ try { state.prevSeen = localStorage.getItem("bli-last-seen"); } catch (e) {}
 const markSeen = () => { try { localStorage.setItem("bli-last-seen", new Date().toISOString()); } catch (e) {} };
 
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const safeUrl = u => /^https?:\/\//.test(u || "") ? u : "#";
+const isHttp = u => /^https?:\/\//.test(u || "");
 const fmt = (f, iso) => { try { return f.format(new Date(iso)); } catch (e) { return ""; } };
 const ms = iso => new Date(iso).getTime();
 const dayKey = iso => fmt(dayKeyFmt, iso);
+const hm = iso => fmt(hmFmt, iso);
 
 function ago(iso) {
   const m = Math.round((Date.now() - ms(iso)) / 60000);
@@ -220,6 +213,12 @@ function dayLabel(iso) {
   if (today && k === shiftKey(today, -1)) return "אתמול";
   return fmt(dayNameFmt, iso);
 }
+// A time together with its day ("היום ב-19:14", "אתמול ב-18:43", "ביום שלישי ב-18:43"), for anything that can cross midnight.
+function when(iso) {
+  const k = dayKey(iso), today = dayKey(new Date().toISOString());
+  const day = k === today ? "היום" : today && k === shiftKey(today, -1) ? "אתמול" : "ביום " + fmt(weekdayFmt, iso).replace(/^יום /, "");
+  return `${day} ב-${hm(iso)}`;
+}
 function greeting() {
   const h = Number(hourFmt.format(new Date()));
   return h >= 5 && h < 12 ? "בוקר טוב" : h >= 12 && h < 17 ? "צהריים טובים" : h >= 17 && h < 22 ? "ערב טוב" : "לילה טוב";
@@ -229,26 +228,37 @@ function countLine(n) {
   if (n === 1) return "דבר אחד חשוב קרה ב-24 השעות האחרונות.";
   return `${n} דברים חשובים קרו ב-24 השעות האחרונות.`;
 }
+// One entry per outlet, with a link when one of its reports has a real address (some feeds omit it).
 const outletList = s => {
   const seen = new Map();
-  for (const x of s.sources || []) if (!seen.has(x.name)) seen.set(x.name, x.url);
+  for (const x of s.sources || []) {
+    const url = isHttp(x.url) ? x.url : "";
+    if (!seen.has(x.name) || (url && !seen.get(x.name))) seen.set(x.name, url);
+  }
   return [...seen];
 };
 
+// When the story was first reported and when it was confirmed. Day words appear only when the days differ,
+// and a short gap isn't worth a line.
+function storyNote(s) {
+  const sameDay = dayKey(s.created) === dayKey(s.updated);
+  const first = sameDay ? `ב-${hm(s.created)}` : when(s.created);
+  if (s.updates > 0) return `פורסם לראשונה ${first}`;
+  if (ms(s.updated) - ms(s.created) < 30 * 60000) return "";
+  return `דווח לראשונה ${first}, אושר ${sameDay ? `ב-${hm(s.updated)}` : when(s.updated)}`;
+}
+
 function storyHtml(s) {
-  const pills = [`<span class="pill topic">${esc(s.topic)}</span>`]
-    .concat((s.impact || []).filter(k => IMPACT[k]).map(k => `<span class="pill ${k}">${IMPACT[k]}</span>`));
-  if (state.prevSeen && ms(s.updated) > ms(state.prevSeen)) pills.unshift(`<span class="pill new">חדש</span>`);
-  if (s.urgent) pills.unshift(`<span class="pill urgent">דחוף</span>`);
-  const links = outletList(s).map(([name, url]) => `<a href="${esc(safeUrl(url))}" target="_blank" rel="noopener"><bdi>${esc(name)}</bdi></a>`).join(", ");
-  const firstAt = fmt(hmFmt, s.created);
-  const note = s.updates > 0 ? `עודכן. פורסם לראשונה ב-${firstAt}`
-    : ms(s.updated) - ms(s.created) > 5 * 60000 ? `דווח לראשונה ב-${firstAt}, אושר ממקור נוסף ב-${fmt(hmFmt, s.updated)}` : "";
-  return `<article class="story${s.urgent ? " urgent" : ""}" data-id="${esc(s.id)}">
-    <div class="meta"><span class="time">${fmt(hmFmt, s.updated)}</span>${pills.join("")}</div>
+  const pills = [];
+  if (state.prevSeen && ms(s.updated) > ms(state.prevSeen)) pills.push(`<span class="pill new">חדש</span>`);
+  if (s.updates > 0) pills.push(`<span class="pill edited">עודכן</span>`);
+  const links = outletList(s).map(([name, url]) => url
+    ? `<a href="${esc(url)}" target="_blank" rel="noopener"><bdi>${esc(name)}</bdi></a>` : `<bdi>${esc(name)}</bdi>`).join(", ");
+  const note = storyNote(s);
+  return `<article class="story" data-id="${esc(s.id)}">
+    <div class="meta"><span class="time">${hm(s.updated)}</span><span class="topic">${esc(s.topic)}</span>${pills.join("")}</div>
     <h3>${esc(s.headline)}</h3>
     <p>${esc(s.summary)}</p>
-    ${s.action ? `<div class="todo"><b>מה לעשות:</b>${esc(s.action)}</div>` : ""}
     <div class="byline">דיווחו: ${links}${note ? `<span class="upd">${note}</span>` : ""}</div>
   </article>`;
 }
@@ -292,8 +302,8 @@ function renderCuts() {
   return `<p class="cuts-intro">כל מה שנחתך ביממה האחרונה, ולמה. ידיעה שדווחה רק בכלי תקשורת אחד מחכה כאן עד שמקור נוסף מאשר אותה.</p>
     <div class="cats">${cats.map(([c, n]) => `<button class="cat${c === WAITING ? " waiting" : ""}" data-cat="${esc(c)}" aria-pressed="${state.cat === c}">${esc(c)} (${n})</button>`).join("")}</div>
     <div class="sheet">${shown.map(it => `<div class="cut">
-      <a href="${esc(safeUrl(it.url))}" target="_blank" rel="noopener">${esc(it.title)}</a>
-      <span class="why"><bdi>${fmt(hmFmt, it.t)}</bdi>&rlm;, <bdi>${esc(it.source)}</bdi>&rlm;. <b>${esc(it.category)}</b>${it.reason ? `: <bdi>${esc(it.reason)}</bdi>` : ""}</span>
+      ${isHttp(it.url) ? `<a href="${esc(it.url)}" target="_blank" rel="noopener">${esc(it.title)}</a>` : `<span class="t">${esc(it.title)}</span>`}
+      <span class="why"><bdi>${when(it.t)}</bdi>&rlm;, <bdi>${esc(it.source)}</bdi>&rlm;. <b>${esc(it.category)}</b>${it.reason ? `: <bdi>${esc(it.reason)}</bdi>` : ""}</span>
     </div>`).join("")}</div>`;
 }
 
