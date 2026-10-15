@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>בלי רעש</title>
 <meta name="description" content="רק מה שחשוב לדעת: ידיעות מכמה כלי תקשורת, בלי דרמה ובלי רעש.">
-<meta name="theme-color" content="#FCE9DC" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#1F1720" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1C2B5A" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -15,175 +15,167 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Assistant:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;500;800;900&family=Suez+One&family=Assistant:wght@400;600&display=swap">
 <style>
-/* Layout: a calm reading column. Each day's stories sit on one warm sheet, separated by soft rules;
-   the feed ends on purpose with the "settled line" mark. Mobile first, RTL throughout. */
+/* One ink on white paper, set like a Hebrew newspaper: Frank Ruhl (the face Hebrew papers were set in),
+   a heavy masthead with an edition stamp, and a dateline boxed between a thick and a thin rule.
+   Down the margin runs a lifeline: it starts as red noise and settles into a straight line, and the amount
+   of noise is how much happened since the reader's last visit. At night the plate is inverted. */
 :root {
-  --apricot: #FCE9DC;   /* page */
-  --sheet: #FFF8F3;     /* reading surface */
-  --ink: #2A1F2D;       /* deep plum text */
-  --ink-soft: #4E3F4C;
-  --muted: #6B5A66;
-  --rule: #F1DACD;
-  --rose: #A8355C;      /* the few interactive bits */
-  --rose-soft: #F9DCE3;
-  --butter: #FBE7A1; --butter-ink: #5B4300;   /* changes what to do */
-  --mint: #D3EEDD;   --mint-ink: #23553C;     /* changes the state of things */
-  --lilac: #E6DEF7;  --lilac-ink: #45387A;    /* will matter for a while */
-  --blush: #F8DCD2;  --blush-ink: #74372A;    /* topic */
-  --alarm: #B4382A;  --alarm-ink: #FFFFFF;    /* an outlet that stopped responding */
-  --display: "Fredoka", "Assistant", "Segoe UI", "Arial Hebrew", Arial, sans-serif;
+  --paper: #FFFFFF; --ink: #1C2B5A; --ink-2: #4A577A; --ink-3: #687394;
+  --line: #B4BBD0; --rule: #E3E6EF; --red: #C23A2B;
+  --head: "Frank Ruhl Libre", "David Libre", "Times New Roman", serif;
+  --mast: "Suez One", "Frank Ruhl Libre", serif;
   --body: "Assistant", "Segoe UI", "Arial Hebrew", Arial, sans-serif;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --apricot: #1F1720; --sheet: #2A2029; --ink: #F7ECE6; --ink-soft: #E3D3D9; --muted: #C2B0B8; --rule: #3B2E39;
-    --rose: #F29AB8; --rose-soft: #47283A;
-    --butter: #4A3B10; --butter-ink: #F7D978; --mint: #1F3A2C; --mint-ink: #A6E0BE;
-    --lilac: #2F2847; --lilac-ink: #CFC2F5; --blush: #3D2722; --blush-ink: #F2C3B3;
-    --alarm: #E46A55; --alarm-ink: #1F1720;
+    --paper: #1C2B5A; --ink: #F1F3F8; --ink-2: #C3CADB; --ink-3: #97A1BC;
+    --line: #4A5A86; --rule: #2C3B69; --red: #FF8576;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --apricot: #1F1720; --sheet: #2A2029; --ink: #F7ECE6; --ink-soft: #E3D3D9; --muted: #C2B0B8; --rule: #3B2E39;
-  --rose: #F29AB8; --rose-soft: #47283A;
-  --butter: #4A3B10; --butter-ink: #F7D978; --mint: #1F3A2C; --mint-ink: #A6E0BE;
-  --lilac: #2F2847; --lilac-ink: #CFC2F5; --blush: #3D2722; --blush-ink: #F2C3B3;
-  --alarm: #E46A55; --alarm-ink: #1F1720;
+  --paper: #1C2B5A; --ink: #F1F3F8; --ink-2: #C3CADB; --ink-3: #97A1BC;
+  --line: #4A5A86; --rule: #2C3B69; --red: #FF8576;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
-body { margin: 0; background: var(--apricot); color: var(--ink); font-family: var(--body); font-size: 18px; line-height: 1.75; -webkit-font-smoothing: antialiased; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.7; -webkit-font-smoothing: antialiased; }
 a { color: inherit; }
 button { font: inherit; color: inherit; }
-:focus-visible { outline: 2px solid var(--rose); outline-offset: 3px; border-radius: 6px; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
 [hidden] { display: none !important; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.wrap { max-width: 620px; margin: 0 auto; padding-inline: 20px; }
 
-/* The mark reads in Hebrew's direction: noise on the right settling into a calm line on the left. */
-.mark { width: 34px; height: 14px; flex: none; color: var(--rose); transform: scaleX(-1); }
+/* Masthead: the name, the edition of the day, and the dateline in both calendars. */
+.mast { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: calc(16px + env(safe-area-inset-top, 0px)); }
+.name { font-family: var(--mast); font-weight: 400; font-size: 3.1rem; line-height: 1; margin: 0; letter-spacing: -0.01em; }
+/* White on a slanted black block, the way the papers stamped "מהדורה שלישית". */
+.stamp { background: var(--ink); color: var(--paper); font-family: var(--head); font-weight: 900; font-size: 0.95rem; padding: 3px 16px; clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%); white-space: nowrap; }
+.strip { margin-top: 12px; border-top: 4px solid var(--ink); border-bottom: 1px solid var(--ink); display: flex; flex-wrap: wrap; font-size: 0.85rem; color: var(--ink-2); }
+.strip > span { padding: 4px 12px; }
+.strip > span:first-child { padding-inline-start: 0; }
+.strip > span + span { border-inline-start: 1px solid var(--line); }
+.status { margin-inline-start: auto; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.strip > .status { padding-inline-end: 0; }
+.status.stale { color: var(--red); }
 
-/* Header: name, liveness, and the two views. Sticky but light. */
-.top { position: sticky; top: 0; z-index: 5; background: var(--apricot); padding-top: env(safe-area-inset-top, 0px); }
-.top-in { max-width: 680px; margin: 0 auto; padding-inline: 18px; padding-block: 12px 10px; display: flex; flex-direction: column; gap: 10px; }
-.brand { display: flex; align-items: center; gap: 10px; }
-.wordmark { font-family: var(--display); font-weight: 600; font-size: 1.55rem; line-height: 1; margin: 0; letter-spacing: -0.01em; }
-.status { margin-inline-start: auto; display: inline-flex; align-items: center; gap: 7px; font-size: 0.85rem; color: var(--muted); font-variant-numeric: tabular-nums; }
-.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
-.status.live .dot { background: #3E9B6C; }
-.status.stale { color: var(--alarm); }
-.status.stale .dot { background: var(--alarm); }
-.views { display: flex; gap: 4px; background: var(--sheet); border-radius: 999px; padding: 4px; align-self: flex-start; }
-.view { border: 0; background: none; border-radius: 999px; padding: 6px 16px; font-weight: 600; font-size: 0.95rem; color: var(--muted); cursor: pointer; }
-.view[aria-selected="true"] { background: var(--ink); color: var(--sheet); }
-.view .n { font-weight: 400; margin-inline-start: 6px; font-variant-numeric: tabular-nums; opacity: 0.8; }
+/* The two views. Only this bar stays on screen while reading. */
+.views { position: sticky; top: 0; z-index: 5; background: var(--paper); border-bottom: 1px solid var(--rule); }
+.views-in { max-width: 620px; margin: 0 auto; padding-inline: 20px; display: flex; gap: 22px; }
+.view { border: 0; background: none; padding: 12px 0 9px; margin-bottom: -1px; border-bottom: 2px solid transparent; font-weight: 600; font-size: 0.95rem; color: var(--ink-3); cursor: pointer; }
+.view[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink); }
 
-main { max-width: 680px; margin: 0 auto; padding-inline: 14px; padding-block: 8px 40px; }
+/* The opening line answers one question: did anything happen since I last looked? */
+.hello { padding-top: 28px; }
+.hello h2 { font-family: var(--head); font-weight: 900; font-size: 2.6rem; line-height: 1.04; margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
+.hello h2 .soft { font-weight: 300; display: block; }
 
-/* The opening: a greeting and one calm sentence saying how much actually happened. */
-.hello { padding-inline: 6px; padding-block: 18px 22px; }
-.hello h2 { font-family: var(--display); font-weight: 500; font-size: 1.15rem; color: var(--muted); margin: 0; }
-.hello p { font-family: var(--display); font-weight: 600; font-size: 1.6rem; line-height: 1.3; margin: 2px 0 0; text-wrap: balance; }
-
-.day { font-family: var(--display); font-weight: 600; font-size: 1.05rem; color: var(--ink-soft); margin: 26px 8px 10px; }
-.day:first-of-type { margin-top: 0; }
-.sheet { background: var(--sheet); border-radius: 22px; padding-inline: 20px; }
-
-.story { padding-block: 20px; display: flex; flex-direction: column; gap: 8px; }
-.story + .story { border-top: 1px solid var(--rule); }
-.meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.time { font-weight: 700; font-size: 0.9rem; color: var(--ink-soft); font-variant-numeric: tabular-nums; margin-inline-end: 4px; }
-/* The topic is plain text, not a pill: filled pills are kept for the few things that are true of one story only. */
-.topic { font-size: 0.88rem; font-weight: 600; color: var(--muted); margin-inline-end: 4px; }
-.topic::before { content: "·"; margin-inline-end: 8px; }
-.pill { font-size: 0.8rem; font-weight: 600; line-height: 1.4; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
-.pill.edited { background: var(--butter); color: var(--butter-ink); }
-.story h3 { font-family: var(--display); font-weight: 600; font-size: 1.32rem; line-height: 1.38; margin: 2px 0 0; text-wrap: balance; }
+/* The lifeline. A narrow column holds time and topic; the line runs in the gutter beside it. */
+.feed { --col: 50px; --gut: 20px; --x: calc(var(--col) + var(--gut) / 2); margin-top: 22px; }
+.lead { position: relative; height: 64px; }
+.lead svg { position: absolute; top: 0; inset-inline-start: calc(var(--x) - 12px); width: 24px; height: 64px; overflow: visible; color: var(--red); }
+.lead.quiet svg { color: var(--line); }
+.row { position: relative; display: grid; grid-template-columns: var(--col) minmax(0, 1fr); column-gap: var(--gut); }
+.row::before { content: ""; position: absolute; top: 0; bottom: 0; inset-inline-start: calc(var(--x) - 0.75px); width: 1.5px; background: var(--line); }
+.story { padding-block: 22px 26px; }
+/* Each story is a stop on the line: filled if it arrived since the last visit, hollow if it was already there. */
+.node { position: absolute; top: 33px; inset-inline-start: calc(var(--x) - 5px); width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--ink); background: var(--paper); }
+.story.fresh .node { background: var(--ink); }
+.margin .t { font-family: var(--head); font-weight: 500; font-size: 1.05rem; line-height: 1.2; padding-top: 4px; font-variant-numeric: lining-nums tabular-nums; }
+.margin .topic { font-size: 0.78rem; color: var(--ink-3); line-height: 1.3; margin-top: 4px; }
+.story h3 { font-family: var(--head); font-weight: 800; font-size: 1.38rem; line-height: 1.25; margin: 0 0 8px; letter-spacing: -0.005em; }
+/* The newest story is set like a lead: bigger and heavier. */
+.story.top h3 { font-weight: 900; font-size: 1.95rem; line-height: 1.1; letter-spacing: -0.015em; margin-bottom: 10px; }
 .story p { margin: 0; }
-.byline { font-size: 0.88rem; color: var(--muted); }
-.byline a { color: var(--ink-soft); text-underline-offset: 3px; text-decoration-color: var(--rule); }
+.edited { display: inline-block; background: var(--ink); color: var(--paper); font-family: var(--body); font-weight: 600; font-size: 0.72rem; line-height: 1.5; padding: 0 11px; margin-inline-start: 8px; clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%); vertical-align: 0.3em; letter-spacing: 0; }
+.byline { margin-top: 10px; font-size: 0.85rem; color: var(--ink-2); }
+.byline a { text-underline-offset: 3px; text-decoration-color: var(--line); }
 .byline a:hover { text-decoration-color: currentColor; }
-.byline .upd { display: block; }
+.byline .note { display: block; color: var(--ink-3); }
+/* A day boundary: the line passes under the day's name. */
+.day { padding-block: 14px; }
+.day .margin { font-family: var(--head); font-weight: 500; color: var(--ink-2); white-space: nowrap; }
+.day::after { content: ""; position: absolute; top: 50%; inset-inline-start: calc(var(--x) - 7px); width: 14px; height: 1.5px; background: var(--ink-2); }
+/* The end: the line stops with a short bar, and the page says so. */
+.end { padding-block: 26px 10px; }
+.end::before { bottom: auto; height: 30px; }
+.end::after { content: ""; position: absolute; top: 30px; inset-inline-start: calc(var(--x) - 10px); width: 20px; height: 1.5px; background: var(--ink); }
+.end .msg { grid-column: 2; padding-top: 18px; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.end strong { font-family: var(--head); font-weight: 800; font-size: 1.25rem; }
+.end p { margin: 0; color: var(--ink-2); font-size: 0.95rem; }
+.link-btn { border: 0; background: none; padding: 4px 0; color: var(--ink); font-weight: 600; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
 
-
-/* The ending: the feed is finite on purpose. */
-.end { text-align: center; padding-block: 44px 20px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-.end .mark { width: 96px; height: 36px; margin-bottom: 6px; }
-.end strong { font-family: var(--display); font-weight: 600; font-size: 1.35rem; }
-.end p { margin: 0; color: var(--muted); max-width: 32ch; }
-.link-btn { border: 0; background: none; color: var(--rose); font-weight: 600; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; padding: 6px; }
-
-.empty { background: var(--sheet); border-radius: 22px; padding: 30px 22px; text-align: center; color: var(--muted); }
-.empty strong { display: block; color: var(--ink); font-family: var(--display); font-weight: 600; font-size: 1.2rem; margin-bottom: 4px; }
+.empty { padding-block: 34px; color: var(--ink-2); }
+.empty strong { display: block; color: var(--ink); font-family: var(--head); font-weight: 800; font-size: 1.3rem; }
 
 /* What was filtered out, and why. */
-.cuts-intro { padding: 18px 6px 14px; color: var(--ink-soft); margin: 0; }
-.cats { display: flex; flex-wrap: wrap; gap: 6px; padding-inline: 2px; margin-bottom: 14px; }
-.cat { border: 0; border-radius: 999px; padding: 5px 12px; font-size: 0.85rem; font-weight: 600; cursor: pointer; background: var(--sheet); color: var(--ink-soft); font-variant-numeric: tabular-nums; }
-.cat.waiting { background: var(--lilac); color: var(--lilac-ink); }
-.cat[aria-pressed="true"] { background: var(--ink); color: var(--sheet); }
-.cut { padding-block: 14px; display: flex; flex-direction: column; gap: 2px; }
+.cuts-intro { padding-block: 26px 12px; margin: 0; color: var(--ink-2); }
+.cats { display: flex; flex-wrap: wrap; gap: 0 16px; padding-bottom: 10px; margin-bottom: 4px; border-bottom: 1px solid var(--ink); }
+.cat { border: 0; background: none; padding: 6px 0; font-size: 0.9rem; font-weight: 600; color: var(--ink-3); cursor: pointer; font-variant-numeric: tabular-nums; }
+.cat.waiting { color: var(--ink); }
+.cat[aria-pressed="true"] { color: var(--ink); text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 6px; }
+.cut { padding-block: 12px; display: flex; flex-direction: column; gap: 2px; }
 .cut + .cut { border-top: 1px solid var(--rule); }
-.cut a, .cut .t { text-decoration: none; font-size: 1rem; line-height: 1.5; }
+.cut a, .cut .t { text-decoration: none; font-family: var(--head); font-weight: 500; font-size: 1.05rem; line-height: 1.45; }
 .cut a:hover { text-decoration: underline; }
-.cut .why { font-size: 0.82rem; color: var(--muted); }
-.cut .why b { font-weight: 600; color: var(--ink-soft); }
+.cut .why { font-size: 0.82rem; color: var(--ink-3); }
+.cut .why b { font-weight: 600; color: var(--ink-2); }
 
-footer { max-width: 680px; margin: 0 auto; padding-inline: 20px; padding-block: 8px calc(36px + env(safe-area-inset-bottom, 0px)); color: var(--muted); font-size: 0.85rem; display: flex; flex-direction: column; gap: 10px; }
-.outlets { display: flex; flex-wrap: wrap; gap: 4px 14px; font-variant-numeric: tabular-nums; }
-.outlets .bad { color: var(--alarm); }
-.install { background: var(--sheet); border-radius: 16px; padding: 12px 14px; color: var(--ink-soft); display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
-.install button { border: 0; background: var(--ink); color: var(--sheet); border-radius: 999px; padding: 6px 14px; font-weight: 600; cursor: pointer; }
+footer { padding-block: 34px calc(36px + env(safe-area-inset-bottom, 0px)); color: var(--ink-3); font-size: 0.85rem; display: flex; flex-direction: column; gap: 10px; }
+.outlets { display: flex; flex-wrap: wrap; gap: 2px 14px; font-variant-numeric: tabular-nums; }
+.outlets .bad { color: var(--red); }
+.install { border-top: 1px solid var(--rule); padding-top: 12px; color: var(--ink-2); display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.install button { border: 0; background: var(--ink); color: var(--paper); padding: 5px 14px; font-weight: 600; cursor: pointer; }
 
 @media (min-width: 720px) {
-  body { font-size: 19px; }
-  .hello p { font-size: 1.85rem; }
-  .story h3 { font-size: 1.42rem; }
-  .sheet { padding-inline: 28px; }
+  body { font-size: 18px; }
+  .name { font-size: 3.6rem; }
+  .hello h2 { font-size: 3rem; }
+  .story.top h3 { font-size: 2.2rem; }
+  .feed { --col: 58px; --gut: 24px; }
 }
-.pill.new { background: var(--rose); color: var(--sheet); }
 </style>
 </head>
 <body>
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <symbol id="settle" viewBox="0 0 96 36"><path d="M2 18 C8 4, 14 4, 18 18 S28 32, 32 18 S40 8, 44 18 S50 26, 54 18 S62 18, 66 18 L94 18" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-</svg>
-<header class="top">
-  <div class="top-in">
-    <div class="brand">
-      <svg class="mark" aria-hidden="true"><use href="#settle"/></svg>
-      <h1 class="wordmark">בלי רעש</h1>
-      <span class="status" id="status"><span class="dot"></span><span id="status-text">מתחבר…</span></span>
-    </div>
-    <div class="views" role="tablist" aria-label="תצוגה">
-      <button class="view" role="tab" id="tab-news" aria-selected="true" aria-controls="view" tabindex="0">חדשות<span class="n" id="n-news"></span></button>
-      <button class="view" role="tab" id="tab-cuts" aria-selected="false" aria-controls="view" tabindex="-1">מה סוננו<span class="n" id="n-cuts"></span></button>
-    </div>
+<div class="wrap">
+  <header class="mast">
+    <h1 class="name">בלי רעש</h1>
+    <span class="stamp" id="stamp" hidden></span>
+  </header>
+  <div class="strip"><span id="civil"></span><span id="hebrew"></span><span class="status" id="status">מתחבר…</span></div>
+</div>
+<nav class="views" role="tablist" aria-label="תצוגה">
+  <div class="views-in">
+    <button class="view" role="tab" id="tab-news" aria-selected="true" aria-controls="view" tabindex="0">חדשות</button>
+    <button class="view" role="tab" id="tab-cuts" aria-selected="false" aria-controls="view" tabindex="-1">מה נחתך</button>
   </div>
-</header>
-<main>
+</nav>
+<main class="wrap">
   <div id="view" role="tabpanel" aria-labelledby="tab-news">
     <div class="empty"><strong>טוען את הידיעות</strong>רגע אחד.</div>
   </div>
 </main>
-<footer id="foot"></footer>
+<footer class="wrap" id="foot"></footer>
 
 <script>
 const WAITING = "ממתין למקור נוסף";
 const TZ = "Asia/Jerusalem";
 const hmFmt = new Intl.DateTimeFormat("he-IL", { timeZone: TZ, hour: "2-digit", minute: "2-digit", hour12: false });
 const dayKeyFmt = new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" });
-const dayNameFmt = new Intl.DateTimeFormat("he-IL", { timeZone: TZ, weekday: "long", day: "numeric", month: "long" });
 const hourFmt = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, hour: "numeric", hour12: false });
 const weekdayFmt = new Intl.DateTimeFormat("he-IL", { timeZone: TZ, weekday: "long" });
+const civilFmt = new Intl.DateTimeFormat("he-IL", { timeZone: TZ, weekday: "long", day: "numeric", month: "long" });
+const hebrewFmt = new Intl.DateTimeFormat("he-IL-u-ca-hebrew", { timeZone: TZ, day: "numeric", month: "long", year: "numeric" });
 
 const state = { feed: null, filtered: null, tab: "news", cat: null, failed: false, sig: "", prevSeen: null,
                 installEvent: null, installed: false, pendingReload: false };
 try { const t = localStorage.getItem("bli-tab"); if (t === "news" || t === "cuts") state.tab = t; } catch (e) {}
-// Stories that arrived since the reader's previous visit carry a "חדש" pill for this whole visit.
+// The reader's previous visit: stories since then are new, and the noise at the top of the line counts them.
 try { state.prevSeen = localStorage.getItem("bli-last-seen"); } catch (e) {}
 const markSeen = () => { try { localStorage.setItem("bli-last-seen", new Date().toISOString()); } catch (e) {} };
 
@@ -191,6 +183,7 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": 
 const isHttp = u => /^https?:\/\//.test(u || "");
 const fmt = (f, iso) => { try { return f.format(new Date(iso)); } catch (e) { return ""; } };
 const ms = iso => new Date(iso).getTime();
+const nowIso = () => new Date().toISOString();
 const dayKey = iso => fmt(dayKeyFmt, iso);
 const hm = iso => fmt(hmFmt, iso);
 
@@ -208,26 +201,47 @@ function shiftKey(key, days) {
   return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
 }
 function dayLabel(iso) {
-  const k = dayKey(iso), today = dayKey(new Date().toISOString());
+  const k = dayKey(iso), today = dayKey(nowIso());
   if (k === today) return "היום";
   if (today && k === shiftKey(today, -1)) return "אתמול";
-  return fmt(dayNameFmt, iso);
+  if (today && k === shiftKey(today, -2)) return "שלשום";
+  return fmt(weekdayFmt, iso);
 }
 // A time together with its day ("היום ב-19:14", "אתמול ב-18:43", "ביום שלישי ב-18:43"), for anything that can cross midnight.
 function when(iso) {
-  const k = dayKey(iso), today = dayKey(new Date().toISOString());
-  const day = k === today ? "היום" : today && k === shiftKey(today, -1) ? "אתמול" : "ביום " + fmt(weekdayFmt, iso).replace(/^יום /, "");
-  return `${day} ב-${hm(iso)}`;
+  const d = dayLabel(iso);
+  return `${d === "היום" || d === "אתמול" || d === "שלשום" ? d : "ב" + d} ב-${hm(iso)}`;
 }
-function greeting() {
+// Browsers give the Hebrew date with Arabic digits; papers print it in letters ("ד׳ בחשוון תשפ״ז").
+function gematria(n) {
+  const L = [[400, "ת"], [300, "ש"], [200, "ר"], [100, "ק"], [90, "צ"], [80, "פ"], [70, "ע"], [60, "ס"], [50, "נ"], [40, "מ"],
+             [30, "ל"], [20, "כ"], [10, "י"], [9, "ט"], [8, "ח"], [7, "ז"], [6, "ו"], [5, "ה"], [4, "ד"], [3, "ג"], [2, "ב"], [1, "א"]];
+  let s = "";
+  n %= 1000;
+  for (const [v, ch] of L) {
+    while (n >= v) {
+      if (n === 15 || n === 16) { s += n === 15 ? "טו" : "טז"; n = 0; break; }  // never spell the divine name
+      s += ch; n -= v;
+    }
+  }
+  return s.length === 1 ? s + "׳" : s.slice(0, -1) + "״" + s.slice(-1);
+}
+function hebrewDate(d) {
+  try {
+    const p = Object.fromEntries(hebrewFmt.formatToParts(d).map(x => [x.type, x.value]));
+    return `${gematria(+p.day)} ב${p.month.replace(/^ב/, "")} ${gematria(+p.year)}`;
+  } catch (e) { return ""; }
+}
+function edition() {
   const h = Number(hourFmt.format(new Date()));
-  return h >= 5 && h < 12 ? "בוקר טוב" : h >= 12 && h < 17 ? "צהריים טובים" : h >= 17 && h < 22 ? "ערב טוב" : "לילה טוב";
+  return "מהדורת " + (h >= 5 && h < 12 ? "בוקר" : h >= 12 && h < 17 ? "צהריים" : h >= 17 && h < 22 ? "ערב" : "לילה");
 }
-function countLine(n) {
-  if (n === 0) return "ב-24 השעות האחרונות לא קרה משהו שחשוב לדעת.";
-  if (n === 1) return "דבר אחד חשוב קרה ב-24 השעות האחרונות.";
-  return `${n} דברים חשובים קרו ב-24 השעות האחרונות.`;
+// The last visit counts only if it was within the past day; after longer, the page opens on the whole day.
+function lastVisit() {
+  const t = ms(state.prevSeen);
+  return Number.isFinite(t) && t < Date.now() && Date.now() - t < 864e5 ? t : null;
 }
+
 // One entry per outlet, with a link when one of its reports has a real address (some feeds omit it).
 const outletList = s => {
   const seen = new Map();
@@ -248,18 +262,46 @@ function storyNote(s) {
   return `דווח לראשונה ${first}, אושר ${sameDay ? `ב-${hm(s.updated)}` : when(s.updated)}`;
 }
 
-function storyHtml(s) {
-  const pills = [];
-  if (state.prevSeen && ms(s.updated) > ms(state.prevSeen)) pills.push(`<span class="pill new">חדש</span>`);
-  if (s.updates > 0) pills.push(`<span class="pill edited">עודכן</span>`);
+function heroLine(stories, last) {
+  if (last == null) {
+    const n = stories.filter(s => ms(s.updated) >= Date.now() - 864e5).length;
+    if (n === 0) return `לא קרה משהו שחשוב<span class="soft">לדעת ביממה האחרונה.</span>`;
+    return `${n === 1 ? "דבר אחד חשוב" : `${n} דברים חשובים`}<span class="soft">ביממה האחרונה.</span>`;
+  }
+  const lastIso = new Date(last).toISOString();
+  const at = dayKey(lastIso) === dayKey(nowIso()) ? hm(lastIso) : when(lastIso);
+  const fresh = stories.filter(s => ms(s.updated) > last).length;
+  if (fresh === 0) return `שקט מאז ${at}.<span class="soft">אין חדש.</span>`;
+  return `${fresh === 1 ? "דבר אחד חדש" : `${fresh} דברים חדשים`}<span class="soft">מאז ${at}.</span>`;
+}
+
+// The brand mark, turned to run down the page: a wave per new story (up to three), swinging wider the more
+// there is, each wave calmer than the last.
+function noisePath(n, h = 64) {
+  if (!n) return `M12 0 L12 ${h}`;
+  const swings = Math.min(n, 3) * 2, amp = Math.min(5 + n * 2, 13), seg = (h * 0.8) / swings;
+  let d = "M12 0", y = 0;
+  for (let i = 0; i < swings; i++) {
+    const a = amp * (1 - i / swings) * (i % 2 ? -1 : 1);
+    d += ` Q${(12 + a * 1.6).toFixed(1)} ${(y + seg / 2).toFixed(1)}, 12 ${(y + seg).toFixed(1)}`;
+    y += seg;
+  }
+  return d + ` L12 ${h}`;
+}
+
+function storyHtml(s, top, last) {
+  const fresh = last != null && ms(s.updated) > last;
   const links = outletList(s).map(([name, url]) => url
     ? `<a href="${esc(url)}" target="_blank" rel="noopener"><bdi>${esc(name)}</bdi></a>` : `<bdi>${esc(name)}</bdi>`).join(", ");
   const note = storyNote(s);
-  return `<article class="story" data-id="${esc(s.id)}">
-    <div class="meta"><span class="time">${hm(s.updated)}</span><span class="topic">${esc(s.topic)}</span>${pills.join("")}</div>
-    <h3>${esc(s.headline)}</h3>
-    <p>${esc(s.summary)}</p>
-    <div class="byline">דיווחו: ${links}${note ? `<span class="upd">${note}</span>` : ""}</div>
+  return `<article class="row story${top ? " top" : ""}${fresh ? " fresh" : ""}" data-id="${esc(s.id)}">
+    <span class="node" aria-hidden="true"></span>
+    <div class="margin"><div class="t">${hm(s.updated)}</div><div class="topic">${esc(s.topic)}</div></div>
+    <div>
+      <h3>${fresh ? `<span class="sr">חדש: </span>` : ""}${esc(s.headline)}${s.updates > 0 ? `<span class="edited">עודכן</span>` : ""}</h3>
+      <p>${esc(s.summary)}</p>
+      <div class="byline">דיווחו: ${links}${note ? `<span class="note">${note}</span>` : ""}</div>
+    </div>
   </article>`;
 }
 
@@ -267,52 +309,63 @@ function endLine() {
   const items = state.filtered?.items || [];
   const waiting = items.filter(i => i.category === WAITING).length, cut = items.length - waiting;
   const n = x => x.toLocaleString("he-IL");
-  if (cut && waiting) return `${n(cut)} ידיעות אחרות לא עברו את המבחן, ו-${n(waiting)} מחכות שמקור נוסף יאשר אותן.`;
-  if (cut) return `${n(cut)} ידיעות אחרות לא עברו את המבחן.`;
-  if (waiting) return `${n(waiting)} ידיעות מחכות שמקור נוסף יאשר אותן.`;
-  return "כל השאר לא עבר את המבחן.";
+  if (cut && waiting) return `${n(cut)} דיווחים אחרים לא עברו את הסינון, ו-${n(waiting)} מחכים שמקור נוסף יאשר אותם.`;
+  if (cut) return `${n(cut)} דיווחים אחרים לא עברו את הסינון.`;
+  if (waiting) return `${n(waiting)} דיווחים מחכים שמקור נוסף יאשר אותם.`;
+  return "כל השאר לא עבר את הסינון.";
 }
 
 function renderNews() {
   const stories = [...(state.feed?.stories || [])].sort((a, b) => String(b.updated).localeCompare(String(a.updated)));
-  const dayAgo = Date.now() - 864e5;
-  let out = `<section class="hello"><h2>${greeting()}.</h2><p>${countLine(stories.filter(s => ms(s.updated) >= dayAgo).length)}</p></section>`;
+  const last = lastVisit();
+  let out = `<section class="hello"><h2>${heroLine(stories, last)}</h2></section>`;
   if (!stories.length) {
     return out + `<div class="empty"><strong>${state.failed ? "אין חיבור כרגע" : "עוד אין ידיעות"}</strong>${state.failed ? "כשיחזור החיבור הדף יתעדכן לבד." : "ידיעות שדווחו בשני כלי תקשורת לפחות יופיעו כאן."}</div>`;
   }
-  const byDay = new Map();
-  for (const s of stories) { const d = dayLabel(s.updated); if (!byDay.has(d)) byDay.set(d, []); byDay.get(d).push(s); }
-  for (const [d, list] of byDay) out += `<h2 class="day">${esc(d)}</h2><div class="sheet">${list.map(storyHtml).join("")}</div>`;
-  out += `<section class="end">
-    <svg class="mark" aria-hidden="true"><use href="#settle"/></svg>
-    <strong>זהו, ראית את כל מה שחשוב.</strong>
-    <p>${endLine()}</p>
-    <button class="link-btn" data-goto="cuts">מה סוננו ולמה</button>
-  </section>`;
+  const fresh = last == null ? 0 : stories.filter(s => ms(s.updated) > last).length;
+  out += `<div class="feed"><div class="lead${fresh ? "" : " quiet"}" aria-hidden="true"><svg viewBox="0 0 24 64">
+    <path d="${noisePath(fresh)}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>`;
+  let day = "היום";
+  stories.forEach((s, i) => {
+    const d = dayLabel(s.updated);
+    if (d !== day) { out += `<div class="row day"><div class="margin">${esc(d)}</div></div>`; day = d; }
+    out += storyHtml(s, i === 0, last);
+  });
+  out += `<div class="row end"><div class="msg"><strong>זהו, עד כאן.</strong><p>${endLine()}</p>
+    <button class="link-btn" data-goto="cuts">מה נחתך ולמה</button></div></div></div>`;
   return out;
 }
 
 function renderCuts() {
   const items = [...(state.filtered?.items || [])].sort((a, b) => String(b.t).localeCompare(String(a.t)));
-  if (!items.length) return `<p class="cuts-intro">עוד לא סונן כלום.</p>`;
+  if (!items.length) return `<p class="cuts-intro">עוד לא נחתך כלום.</p>`;
   const counts = new Map();
   for (const it of items) counts.set(it.category, (counts.get(it.category) || 0) + 1);
   const cats = [...counts].sort((a, b) => (a[0] === WAITING ? -1 : b[0] === WAITING ? 1 : b[1] - a[1]));
   const shown = state.cat ? items.filter(i => i.category === state.cat) : items;
   return `<p class="cuts-intro">כל מה שנחתך ביממה האחרונה, ולמה. ידיעה שדווחה רק בכלי תקשורת אחד מחכה כאן עד שמקור נוסף מאשר אותה.</p>
     <div class="cats">${cats.map(([c, n]) => `<button class="cat${c === WAITING ? " waiting" : ""}" data-cat="${esc(c)}" aria-pressed="${state.cat === c}">${esc(c)} (${n})</button>`).join("")}</div>
-    <div class="sheet">${shown.map(it => `<div class="cut">
+    <div>${shown.map(it => `<div class="cut">
       ${isHttp(it.url) ? `<a href="${esc(it.url)}" target="_blank" rel="noopener">${esc(it.title)}</a>` : `<span class="t">${esc(it.title)}</span>`}
       <span class="why"><bdi>${when(it.t)}</bdi>&rlm;, <bdi>${esc(it.source)}</bdi>&rlm;. <b>${esc(it.category)}</b>${it.reason ? `: <bdi>${esc(it.reason)}</bdi>` : ""}</span>
     </div>`).join("")}</div>`;
 }
 
+// Masthead and dateline: the edition of the day, the date in both calendars, and when the feed was last checked.
 function renderStatus() {
-  const el = document.getElementById("status"), txt = document.getElementById("status-text");
-  if (!state.feed?.updated) { el.className = "status"; txt.textContent = state.failed ? "אין חיבור" : "מתחבר…"; return; }
-  const stale = (Date.now() - ms(state.feed.updated)) / 60000 > 45;
-  el.className = "status " + (stale ? "stale" : "live");
-  txt.textContent = (stale ? "לא התעדכן " : "נבדק ") + ago(state.feed.updated);
+  const stamp = document.getElementById("stamp");
+  stamp.textContent = edition();
+  stamp.hidden = false;
+  const now = new Date();
+  document.getElementById("civil").textContent = civilFmt.format(now);
+  document.getElementById("hebrew").textContent = hebrewDate(now);
+  const el = document.getElementById("status");
+  if (!state.feed?.updated) { el.className = "status"; el.textContent = state.failed ? "אין חיבור" : "מתחבר…"; return; }
+  const t = state.feed.updated;
+  const stale = (Date.now() - ms(t)) / 60000 > 45;
+  const at = dayKey(t) === dayKey(nowIso()) ? hm(t) : when(t);
+  el.className = "status" + (stale ? " stale" : "");
+  el.textContent = stale ? `לא התעדכן מאז ${at}` : `נבדק ${at}`;
 }
 
 const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
@@ -336,9 +389,6 @@ function renderFoot() {
 
 // Rebuild the view, keeping the reader's place when stories are added above what they're reading.
 function render({ keepPlace = false } = {}) {
-  const nNews = state.feed?.stories?.length || 0, nCuts = state.filtered?.items?.length || 0;
-  document.getElementById("n-news").textContent = nNews ? nNews : "";
-  document.getElementById("n-cuts").textContent = nCuts ? nCuts.toLocaleString("he-IL") : "";
   for (const t of ["news", "cuts"]) {
     const b = document.getElementById("tab-" + t);
     b.setAttribute("aria-selected", String(state.tab === t));
@@ -348,10 +398,10 @@ function render({ keepPlace = false } = {}) {
   view.setAttribute("aria-labelledby", "tab-" + state.tab);
   let anchor = null;
   if (keepPlace && state.tab === "news" && window.scrollY > 0) {
-    const headerBottom = document.querySelector(".top").getBoundingClientRect().bottom;
+    const barBottom = document.querySelector(".views").getBoundingClientRect().bottom;
     for (const a of view.querySelectorAll(".story")) {
       const r = a.getBoundingClientRect();
-      if (r.bottom > headerBottom) { anchor = { id: a.dataset.id, top: r.top }; break; }
+      if (r.bottom > barBottom) { anchor = { id: a.dataset.id, top: r.top }; break; }
     }
   }
   view.innerHTML = state.tab === "news" ? renderNews() : renderCuts();
@@ -403,7 +453,7 @@ async function pull(name) {
   return r.json();
 }
 
-const signature = () => [state.failed, (state.feed?.stories || []).map(s => s.id + s.updated).join(","),
+const signature = () => [state.failed, state.prevSeen, (state.feed?.stories || []).map(s => s.id + s.updated).join(","),
   (state.filtered?.items || []).length, state.filtered?.items?.[0]?.id].join("|");
 
 async function refresh(force) {
@@ -425,8 +475,16 @@ if ("serviceWorker" in navigator) {
     if (document.hidden) location.reload(); else state.pendingReload = true;
   });
 }
+let hiddenAt = 0;
 document.addEventListener("visibilitychange", () => {
-  if (document.hidden) { markSeen(); if (state.pendingReload) location.reload(); return; }
+  if (document.hidden) { hiddenAt = Date.now(); markSeen(); if (state.pendingReload) location.reload(); return; }
+  // An installed app is resumed, not reopened. Back after a real break counts as a new visit,
+  // so "new since" starts from when the reader left, and the page opens at the top.
+  if (hiddenAt && Date.now() - hiddenAt >= 10 * 60000) {
+    state.prevSeen = new Date(hiddenAt).toISOString();
+    state.sig = "";
+    window.scrollTo(0, 0);
+  }
   refresh(true);
   swReg?.update().catch(() => {});
 });
@@ -437,7 +495,7 @@ window.addEventListener("appinstalled", () => { state.installed = true; state.in
 render();
 refresh(true);
 setInterval(refresh, 60000);
-setInterval(renderStatus, 30000);
+setInterval(renderStatus, 60000);
 </script>
 </body>
 </html>

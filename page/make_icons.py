@@ -1,4 +1,4 @@
-"""Draw the app icons: the "settled line" mark (a squiggle that calms into a straight line) on apricot.
+"""Draw the app icons: the "settled line" mark on the ink-blue page: red noise that calms into a white line.
 
 Run once: python page/make_icons.py  ->  page/static/icons/*.png
 """
@@ -6,8 +6,9 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-APRICOT = (252, 233, 220)
-ROSE = (168, 53, 92)
+INK = (28, 43, 90)        # the page's ink blue (#1C2B5A)
+NOISE = (255, 133, 118)   # the noise, in the night page's red (#FF8576)
+LINE = (241, 243, 248)    # the settled line, paper white
 OUT = Path(__file__).parent / "static" / "icons"
 
 # The same path as the SVG mark (viewBox 96x36): start point, then cubic segments; "S" mirrors the last control point.
@@ -42,7 +43,7 @@ def path_points(steps=60):
 def icon(size, mark_width_ratio, radius_ratio=0.0):
     ss = 4  # draw large, then shrink, for smooth edges
     big = size * ss
-    img = Image.new("RGB", (big, big), APRICOT)
+    img = Image.new("RGB", (big, big), INK)
     d = ImageDraw.Draw(img)
     scale = big * mark_width_ratio / 92  # path spans x 2..94
     ox = (big - 92 * scale) / 2 - 2 * scale
@@ -50,7 +51,7 @@ def icon(size, mark_width_ratio, radius_ratio=0.0):
     r = 2.2 * scale  # stroke radius (stroke width 4.4 in path units)
     for x, y in path_points():
         cx, cy = ox + x * scale, oy + y * scale
-        d.ellipse((cx - r, cy - r, cx + r, cy + r), fill=ROSE)
+        d.ellipse((cx - r, cy - r, cx + r, cy + r), fill=NOISE if x < 64 else LINE)  # noise until the line settles
     # Mirror for Hebrew readers: the noise is on the right and settles into the line on the left.
     img = img.transpose(Image.FLIP_LEFT_RIGHT).resize((size, size), Image.LANCZOS)
     if radius_ratio:
