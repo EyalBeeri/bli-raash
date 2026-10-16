@@ -1,4 +1,4 @@
-"""Draw the app icons: the "settled line" mark on the ink-blue page: red noise that calms into a white line.
+"""Draw the app icons: the "settled line" mark on the ink-black page: red noise that calms into a white line.
 
 Run once: python page/make_icons.py  ->  page/static/icons/*.png
 """
@@ -6,9 +6,9 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-INK = (28, 43, 90)        # the page's ink blue (#1C2B5A)
+INK = (27, 28, 32)        # the page's ink (#1B1C20)
 NOISE = (255, 133, 118)   # the noise, in the night page's red (#FF8576)
-LINE = (241, 243, 248)    # the settled line, paper white
+LINE = (238, 238, 240)    # the settled line, paper white (#EEEEF0)
 OUT = Path(__file__).parent / "static" / "icons"
 
 # The same path as the SVG mark (viewBox 96x36): start point, then cubic segments; "S" mirrors the last control point.
