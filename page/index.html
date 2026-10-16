@@ -69,6 +69,7 @@ button { font: inherit; color: inherit; }
 .hello { padding-top: 32px; }
 .hello h2 { font-family: var(--head); font-weight: 900; font-size: 2.6rem; line-height: 1.04; margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
 .hello h2 .soft { font-weight: 300; display: block; }
+.pause { margin: 14px 0 0; color: var(--ink-2); font-size: 0.95rem; line-height: 1.55; }
 
 /* The lifeline. A narrow column holds time and topic; the line runs in the gutter beside it. */
 .feed { --col: 50px; --gut: 20px; --x: calc(var(--col) + var(--gut) / 2); margin-top: 22px; }
@@ -312,6 +313,8 @@ function heroLine(stories, n) {
   }
   const lastIso = last == null ? null : new Date(last).toISOString();
   const at = lastIso ? (dayKey(lastIso) === dayKey(nowIso()) ? hm(lastIso) : when(lastIso)) : "";
+  // While filtering is paused nothing new can get through, so "quiet" would be a claim we can't make.
+  if (n === 0 && state.feed?.paused) return at ? `אין חדש מאז ${at}.` : "אין חדש.";
   if (n === 0) return at ? `שקט מאז ${at}.<span class="soft">אין חדש.</span>` : `שקט.<span class="soft">אין חדש מאז הביקור הקודם.</span>`;
   return `${n === 1 ? "דבר אחד חדש" : `${n} דברים חדשים`}<span class="soft">${at ? `מאז ${at}` : "מאז הביקור הקודם"}.</span>`;
 }
@@ -466,13 +469,25 @@ function endLine() {
   return `${c.total.toLocaleString("he-IL")} דיווחים אחרים מהיממה האחרונה לא עברו את הסינון${list ? `, בעיקר ${list}` : ""}.`;
 }
 
+// Filtering stops when the editor keeps failing (most often the Claude usage limit). The page says so plainly:
+// since when, and when it comes back if that's known. Reports gathered meanwhile appear once it does.
+const clock = iso => dayKey(iso) === dayKey(nowIso()) ? `ב-${hm(iso)}` : when(iso);
+function pauseNote(p) {
+  const since = dayKey(p.since) === dayKey(nowIso()) ? hm(p.since) : when(p.since);
+  const back = p.until && ms(p.until) > Date.now() ? clock(p.until) : "";
+  return p.limit
+    ? `הסינון מושהה מאז ${since} בגלל מגבלת השימוש${back ? `, ויחזור לפעול ${back}` : ""}. ידיעות חדשות יופיעו כשיחזור.`
+    : `הסינון מושהה מאז ${since} בגלל תקלה. ידיעות חדשות יופיעו כשיחזור.`;
+}
+
 function renderNews() {
   // Until the first answer arrives there is nothing to say "quiet" about.
   if (!state.feed && !state.failed) return `<div class="empty"><strong>טוען את הידיעות</strong>רגע אחד.</div>`;
   const stories = [...(state.feed?.stories || [])].sort((a, b) => String(b.updated).localeCompare(String(a.updated)));
   seedSeen(stories);
   const fresh = stories.filter(s => !isSeen(s)).length;
-  let out = `<section class="hello"><h2 id="hero">${heroLine(stories, fresh)}</h2></section>`;
+  const paused = state.feed?.paused;
+  let out = `<section class="hello"><h2 id="hero">${heroLine(stories, fresh)}</h2>${paused ? `<p class="pause">${pauseNote(paused)}</p>` : ""}</section>`;
   if (!stories.length) {
     return out + `<div class="empty"><strong>${state.failed ? "אין חיבור כרגע" : "עוד אין ידיעות"}</strong>${state.failed ? "כשיחזור החיבור הדף יתעדכן לבד." : "ידיעות שדווחו בכלי תקשורת משתי קבוצות בעלות לפחות יופיעו כאן."}</div>`;
   }
@@ -512,8 +527,9 @@ function renderStatus() {
   const t = state.feed.updated;
   const stale = (Date.now() - ms(t)) / 60000 > 45;
   const at = dayKey(t) === dayKey(nowIso()) ? hm(t) : when(t);
-  el.className = "status" + (stale ? " stale" : "");
-  el.textContent = stale ? `לא התעדכן מאז ${at}` : `נבדק ${at}`;
+  const paused = !stale && state.feed.paused;
+  el.className = "status" + (stale || paused ? " stale" : "");
+  el.textContent = stale ? `לא התעדכן מאז ${at}` : paused ? "הסינון מושהה" : `נבדק ${at}`;
 }
 
 const MOON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>';
@@ -632,7 +648,7 @@ async function pull(name) {
 }
 
 const signature = () => [state.failed, state.prevSeen, (state.feed?.stories || []).map(s => s.id + s.updated).join(","),
-  state.feed?.cuts?.total].join("|");
+  state.feed?.cuts?.total, JSON.stringify(state.feed?.paused || null)].join("|");
 
 async function refresh(force) {
   if (document.hidden && !force) return;
