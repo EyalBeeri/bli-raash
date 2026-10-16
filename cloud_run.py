@@ -96,7 +96,9 @@ def main():
     SITE.mkdir()
     (SITE / "feed.json").write_text(json.dumps(feed, ensure_ascii=False), encoding="utf-8")
     (SITE / "filtered.json").write_text(json.dumps(filtered, ensure_ascii=False), encoding="utf-8")
-    shutil.copy(PAGE, SITE / "index.html")
+    # The page shows which commit it was deployed from, so a stale copy on a phone is easy to spot.
+    build = (os.environ.get("GITHUB_SHA") or "local")[:7]
+    (SITE / "index.html").write_text(PAGE.read_text(encoding="utf-8").replace("__BUILD__", build), encoding="utf-8")
     shutil.copytree(STATIC, SITE, dirs_exist_ok=True)
     if deploy:
         store.set_meta(con, "site_digest", digest)

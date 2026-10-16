@@ -1,7 +1,7 @@
 // Offline layer for the installed app: the page and the last feed stay readable without a connection.
 // The network is tried first so a good connection always shows the newest version; on a weak one we
 // fall back to the saved copy after a few seconds instead of leaving a blank screen.
-const CACHE = "bli-raash-v9";
+const CACHE = "bli-raash-v10";
 const SHELL = ["./", "feed.json", "manifest.webmanifest", "icons/icon-192.png", "icons/apple-touch-icon.png"];
 const NETWORK_WAIT_MS = 4000;
 
@@ -24,7 +24,11 @@ self.addEventListener("fetch", event => {
   const key = url.origin + url.pathname;  // one saved copy per file, whatever the query string
   const saved = () => caches.match(key).then(hit => hit || (req.mode === "navigate" ? caches.match(new URL("./", location).href) : undefined));
 
-  const network = fetch(req);
+  // Always ask the server (a cheap "not modified" when nothing changed): GitHub Pages lets browsers reuse a copy
+  // for 10 minutes, which kept a new version from showing. A navigation can't be re-made with options, so by URL.
+  const fresh = req.mode === "navigate" ? new Request(req.url, { cache: "no-cache", credentials: "same-origin" })
+                                        : new Request(req, { cache: "no-cache" });
+  const network = fetch(fresh);
   // Save a copy of every good response; registered up front so the browser keeps the worker alive for it.
   event.waitUntil(network.then(res => {
     if (res.ok) {

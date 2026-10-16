@@ -153,6 +153,7 @@ details[open] > summary .more { transform: rotate(180deg); }
 footer { padding-block: 34px calc(36px + env(safe-area-inset-bottom, 0px)); color: var(--ink-3); font-size: 0.85rem; display: flex; flex-direction: column; gap: 10px; }
 .outlets { display: flex; flex-wrap: wrap; gap: 2px 14px; font-variant-numeric: tabular-nums; }
 .outlets .bad { color: var(--red); }
+.build { font-size: 0.75rem; color: var(--ink-3); opacity: 0.8; }
 .install { border-top: 1px solid var(--rule); padding-top: 12px; color: var(--ink-2); display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .install button { border: 0; background: var(--ink); color: var(--paper); padding: 5px 14px; font-weight: 600; cursor: pointer; }
 .notify textarea { width: 100%; height: 6.5em; margin-top: 6px; font: 0.72rem/1.4 ui-monospace, monospace; direction: ltr; color: var(--ink); background: var(--paper); border: 1px solid var(--line); padding: 6px; }
@@ -522,6 +523,8 @@ document.getElementById("mode").addEventListener("click", () => {
   try { localStorage.setItem("bli-theme", dark ? "dark" : "light"); } catch (e) {}
 });
 
+// Which version of the page this is (the commit it was deployed from; filled in by cloud_run.py).
+const BUILD = "__BUILD__";
 const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 const onPhone = matchMedia("(pointer: coarse)").matches;
 
@@ -539,6 +542,7 @@ function renderFoot() {
     else if (onPhone) html += `<div class="install">להתקנה כאפליקציה: בתפריט הדפדפן בוחרים "הוספה למסך הבית".</div>`;
   }
   if (WANTS_NOTIFY) html += notifyBox();
+  html += `<div class="build">גרסה <bdi>${BUILD}</bdi></div>`;
   document.getElementById("foot").innerHTML = html;
 }
 
