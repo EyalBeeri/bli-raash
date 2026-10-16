@@ -51,16 +51,13 @@ def main():
     can_edit = bool(os.environ.get("CLAUDE_CODE_OAUTH_TOKEN")) or not os.environ.get("GITHUB_ACTIONS")
     if not can_edit:
         log("no Claude token secret yet: filtering paused, items wait")
-    edited_ok, edit_error = False, None if can_edit else "no Claude token secret (CLAUDE_CODE_OAUTH_TOKEN)"
     for _ in range(MAX_EDIT_BATCHES if can_edit else 0):
         if not con.execute("SELECT 1 FROM items WHERE status='new' LIMIT 1").fetchone():
             break
         try:
             editor.run_once(con, log=log)
-            edited_ok = True
         except Exception as e:
-            edit_error = f"{type(e).__name__}: {str(e)[:300]}"
-            log(f"editor error: {edit_error}")
+            log(f"editor error: {type(e).__name__}: {str(e)[:300]}")
             break
 
     if can_edit:
@@ -75,14 +72,11 @@ def main():
 
     feed, filtered = publish.build(con, publish.health_from_db(con, health))
 
-    # Phone notifications: urgent stories once confirmed, and alerts if the editor or an outlet stalls.
-    for step in (lambda: notify.push_urgent(con, feed["stories"], log),
-                 lambda: notify.check_editor(con, waiting, edited_ok, edit_error, log),
-                 lambda: notify.check_sources(con, health, log)):
-        try:
-            step()
-        except Exception as e:
-            log(f"notify error: {type(e).__name__}: {str(e)[:200]}")
+    # Phone notifications: urgent stories once confirmed, and nothing about how the feed itself is running.
+    try:
+        notify.push_urgent(con, feed["stories"], log)
+    except Exception as e:
+        log(f"notify error: {type(e).__name__}: {str(e)[:200]}")
     # Content plus the page's own files, so a new design deploys on the next run too.
     h = hashlib.sha1(json.dumps([feed["stories"], filtered["items"]], ensure_ascii=False, sort_keys=True).encode())
     for f in [PAGE] + sorted(p for p in STATIC.rglob("*") if p.is_file()):

@@ -114,7 +114,6 @@ details[open] > summary .more { transform: rotate(180deg); }
 #hero.swap { opacity: 0; }
 @media (prefers-reduced-motion: reduce) { .node, .lead svg, #hero { transition: none; } }
 
-.permit { margin: 14px 0 0; color: var(--ink-2); font-size: 0.95rem; }
 /* The reading lamp: the story at the reading point is in full ink, the rest fade with distance, and the
    lifeline is inked down to where the reader is. */
 .feed { position: relative; }
@@ -391,7 +390,6 @@ function markRead(els) {
     setTimeout(() => {
       hero.innerHTML = `ראית הכול.<span class="soft">אין חדש נוסף.</span>`;
       hero.classList.remove("swap");
-      if (canClose()) document.getElementById("permit").hidden = false;
     }, 500);
   }
 }
@@ -419,9 +417,6 @@ document.addEventListener("toggle", e => {
   const story = e.target.closest?.(".story.fresh");
   if (story && e.target.open) markRead([story]);
 }, true);
-
-// "You can close this" is only true once notifications reach this phone.
-const canClose = () => "Notification" in window && Notification.permission === "granted";
 
 // The reading lamp: fade stories by their distance from the reading point, and ink the lifeline down to it.
 function lamp() {
@@ -477,8 +472,7 @@ function renderNews() {
   const stories = [...(state.feed?.stories || [])].sort((a, b) => String(b.updated).localeCompare(String(a.updated)));
   seedSeen(stories);
   const fresh = stories.filter(s => !isSeen(s)).length;
-  let out = `<section class="hello"><h2 id="hero">${heroLine(stories, fresh)}</h2>
-    <p class="permit" id="permit"${fresh || !canClose() ? " hidden" : ""}>אפשר לסגור. אם יקרה משהו דחוף, תקבל התראה.</p></section>`;
+  let out = `<section class="hello"><h2 id="hero">${heroLine(stories, fresh)}</h2></section>`;
   if (!stories.length) {
     return out + `<div class="empty"><strong>${state.failed ? "אין חיבור כרגע" : "עוד אין ידיעות"}</strong>${state.failed ? "כשיחזור החיבור הדף יתעדכן לבד." : "ידיעות שדווחו בכלי תקשורת משתי קבוצות בעלות לפחות יופיעו כאן."}</div>`;
   }
@@ -544,11 +538,13 @@ const BUILD = "__BUILD__";
 const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 const onPhone = matchMedia("(pointer: coarse)").matches;
 
+// The page shows news only. How it runs (the outlets' health, the version) appears only with ?debug.
+const DEBUG = new URLSearchParams(location.search).has("debug");
 function renderFoot() {
   const h = state.feed?.health || [];
   const standalone = state.installed || matchMedia("(display-mode: standalone)").matches || navigator.standalone;
   let html = "";
-  if (h.length) {
+  if (DEBUG && h.length) {
     html += `<div>הידיעות נאספות מ-${h.length} כלי תקשורת ונבדקות כל כמה דקות. ידיעה מופיעה רק כשדיווחו עליה כלי תקשורת משתי קבוצות בעלות לפחות.</div>
       <div class="outlets">${h.map(x => `<span class="${x.ok ? "" : "bad"}" title="${esc(x.error || "")}"><bdi>${esc(x.source)}</bdi>${x.ok ? (x.newest ? ", " + ago(x.newest) : "") : ", תקלה"}</span>`).join("")}</div>`;
   }
@@ -558,8 +554,8 @@ function renderFoot() {
     else if (onPhone) html += `<div class="install">להתקנה כאפליקציה: בתפריט הדפדפן בוחרים "הוספה למסך הבית".</div>`;
   }
   if (WANTS_NOTIFY) html += notifyBox();
-  html += `<div class="build">גרסה <bdi>${BUILD}</bdi></div>`;
-  document.getElementById("foot").innerHTML = html;
+  if (DEBUG) html += `<div class="build">גרסה <bdi>${BUILD}</bdi></div>`;
+  document.getElementById("foot").innerHTML = html;   // empty, it still keeps the page's bottom margin
 }
 
 // Notifications for the owner's phone. Opening the page with ?notify shows this box: allowing notifications gives
@@ -572,7 +568,7 @@ function notifyBox() {
     return `<div class="install notify">הדפדפן הזה לא תומך בהתראות. ב-Android פותחים את הדף ב-Chrome.</div>`;
   }
   if (state.pushCode) {
-    return `<div class="install notify"><div>ההתראות הופעלו בטלפון הזה. כדי לחבר אותן, שלח את הקוד הזה ל-Claude:
+    return `<div class="install notify"><div>ההתראות הופעלו בטלפון הזה. כדי לחבר אותן, את הקוד הזה שולחים ל-Claude:
       <textarea id="push-code" readonly>${esc(state.pushCode)}</textarea></div><button id="push-copy">${state.pushCopied ? "הועתק" : "העתקת הקוד"}</button></div>`;
   }
   return `<div class="install notify">התראות על ידיעות דחופות, ישירות לטלפון הזה. <button id="push-on">הפעלה</button>${state.pushNote ? `<div>${esc(state.pushNote)}</div>` : ""}</div>`;

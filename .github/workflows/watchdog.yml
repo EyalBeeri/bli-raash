@@ -1,15 +1,12 @@
-# Hourly: if the live page stopped updating, send a phone notification (see watchdog.py).
-# Run it by hand with "test" to send a test notification.
+# By hand only: send a test notification to the phone (see watchdog.py).
 name: watchdog
 on:
-  schedule:
-    - cron: "41 * * * *"
   workflow_dispatch:
     inputs:
       test:
         description: "Send a test notification"
         type: boolean
-        default: false
+        default: true
 permissions:
   contents: read
 jobs:
@@ -23,7 +20,7 @@ jobs:
           python-version: "3.12"
       - name: Install the push library
         run: pip install -q pywebpush==2.5.0
-      - name: Check the live page
+      - name: Send a test notification
         env:
           PUSH_SUBSCRIPTION: ${{ secrets.PUSH_SUBSCRIPTION }}
           VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
