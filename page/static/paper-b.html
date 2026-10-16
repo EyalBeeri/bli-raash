@@ -1,0 +1,672 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>בלי רעש: נייר ב׳: גרעין וכתמים</title>
+<meta name="description" content="רק מה שחשוב לדעת: ידיעות מכמה כלי תקשורת, בלי דרמה ובלי רעש.">
+<meta name="theme-color" content="#FFFFFF" id="theme-color">
+<script>
+  // Light is the default whatever the system says; dark only if the reader chose it (the toggle in the masthead).
+  try { if (localStorage.getItem("bli-theme") === "dark") document.documentElement.dataset.theme = "dark"; } catch (e) {}
+</script>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="בלי רעש">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;500;800;900&family=Suez+One&family=Assistant:wght@400;600&display=swap">
+<style>
+/* One ink on white paper, set like a Hebrew newspaper: Frank Ruhl (the face Hebrew papers were set in),
+   a heavy masthead with an edition stamp, and a dateline boxed between a thick and a thin rule.
+   Down the margin runs a lifeline: it starts as red noise and settles into a straight line, and the amount
+   of noise is how much happened since the reader's last visit. At night the plate is inverted. */
+:root {
+  --paper: #FFFFFF; --ink: #1C2B5A; --ink-2: #4A577A; --ink-3: #687394;
+  --line: #B4BBD0; --rule: #E3E6EF; --red: #C23A2B;
+  --head: "Frank Ruhl Libre", "David Libre", "Times New Roman", serif;
+  --mast: "Suez One", "Frank Ruhl Libre", serif;
+  --body: "Assistant", "Segoe UI", "Arial Hebrew", Arial, sans-serif;
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --paper: #1C2B5A; --ink: #F1F3F8; --ink-2: #C3CADB; --ink-3: #97A1BC;
+  --line: #4A5A86; --rule: #2C3B69; --red: #FF8576;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.7; -webkit-font-smoothing: antialiased; }
+a { color: inherit; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+[hidden] { display: none !important; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.wrap { max-width: 620px; margin: 0 auto; padding-inline: 20px; }
+
+/* Masthead: the name, the edition of the day, and the dateline in both calendars. */
+.mast { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: calc(16px + env(safe-area-inset-top, 0px)); }
+.name { font-family: var(--mast); font-weight: 400; font-size: 3.1rem; line-height: 1; margin: 0; letter-spacing: -0.01em; }
+/* White on a slanted black block, the way the papers stamped "מהדורה שלישית". */
+.mast-end { display: flex; align-items: center; gap: 10px; }
+/* Day and night: a small switch beside the stamp. */
+.mode { border: 0; background: none; padding: 6px; margin-inline-end: -6px; color: var(--ink-2); cursor: pointer; display: grid; place-items: center; }
+.mode svg { width: 20px; height: 20px; }
+.mode:hover { color: var(--ink); }
+.stamp { background: var(--ink); color: var(--paper); font-family: var(--head); font-weight: 900; font-size: 0.95rem; padding: 3px 16px; clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%); white-space: nowrap; }
+.strip { margin-top: 12px; border-top: 4px solid var(--ink); border-bottom: 1px solid var(--ink); display: flex; flex-wrap: wrap; font-size: 0.85rem; color: var(--ink-2); }
+.strip > span { padding: 4px 12px; }
+.strip > span:first-child { padding-inline-start: 0; }
+.strip > span + span { border-inline-start: 1px solid var(--line); }
+.status { margin-inline-start: auto; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.strip > .status { padding-inline-end: 0; }
+.status.stale { color: var(--red); }
+
+/* The opening line answers one question: did anything happen since I last looked? */
+.hello { padding-top: 32px; }
+.hello h2 { font-family: var(--head); font-weight: 900; font-size: 2.6rem; line-height: 1.04; margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
+.hello h2 .soft { font-weight: 300; display: block; }
+
+/* The lifeline. A narrow column holds time and topic; the line runs in the gutter beside it. */
+.feed { --col: 50px; --gut: 20px; --x: calc(var(--col) + var(--gut) / 2); margin-top: 22px; }
+.lead { position: relative; height: 64px; }
+.lead svg { position: absolute; top: 0; inset-inline-start: calc(var(--x) - 12px); width: 24px; height: 64px; overflow: visible; color: var(--red); }
+.lead.quiet svg { color: var(--line); }
+.row { position: relative; display: grid; grid-template-columns: var(--col) minmax(0, 1fr); column-gap: var(--gut); }
+.row::before { content: ""; position: absolute; top: 0; bottom: 0; inset-inline-start: calc(var(--x) - 0.75px); width: 1.5px; background: var(--line); }
+/* Each story is a stop on the line: filled if it arrived since the last visit, hollow if it was already there. */
+.node { position: absolute; top: 33px; inset-inline-start: calc(var(--x) - 5px); width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--ink); background: var(--paper); }
+.story.fresh .node { background: var(--ink); }
+.margin .t { font-family: var(--head); font-weight: 500; font-size: 1.05rem; line-height: 1.2; padding-top: 4px; font-variant-numeric: lining-nums tabular-nums; }
+.margin .topic { font-size: 0.78rem; color: var(--ink-3); line-height: 1.3; margin-top: 4px; }
+.story h3 { font-family: var(--head); font-weight: 800; font-size: 1.38rem; line-height: 1.25; margin: 0 0 8px; letter-spacing: -0.005em; }
+/* The newest story is set like a lead: bigger and heavier. */
+.story.top h3 { font-weight: 900; font-size: 1.95rem; line-height: 1.1; letter-spacing: -0.015em; margin-bottom: 10px; }
+.story p { margin: 0; }
+.edited { display: inline-block; background: var(--ink); color: var(--paper); font-family: var(--body); font-weight: 600; font-size: 0.72rem; line-height: 1.5; padding: 0 11px; margin-inline-start: 8px; clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%); vertical-align: 0.3em; letter-spacing: 0; }
+.byline { margin-top: 10px; font-size: 0.85rem; color: var(--ink-2); }
+.byline a { text-underline-offset: 3px; text-decoration-color: var(--line); }
+.byline a:hover { text-decoration-color: currentColor; }
+.byline .note { display: block; color: var(--ink-3); }
+/* Every story opens as its headline; a tap shows the summary. New ones are set heavy, read ones quiet. */
+.story { padding-block: 13px 14px; }
+.story .node { top: 21px; }
+.story.top .node { top: 27px; }
+.story summary { list-style: none; cursor: pointer; }
+.story summary::-webkit-details-marker { display: none; }
+.story h3 { font-size: 1.2rem; line-height: 1.32; margin: 0; }
+.story.top h3 { font-size: 1.6rem; line-height: 1.15; margin: 0; }
+.story details[open] h3 { margin-bottom: 8px; }
+.story.seen .margin .t { color: var(--ink-2); }
+.story.seen h3 { font-weight: 500; font-size: 1.1rem; line-height: 1.4; color: var(--ink-2); }
+.story.seen summary:hover h3, .story.seen details[open] h3 { color: var(--ink); }
+/* The hint that a headline opens: a small chevron after it, turning over when open. */
+.more { display: inline-block; width: 11px; height: 11px; margin-inline-start: 7px; vertical-align: 0.12em; color: var(--ink-3); transition: transform 0.2s ease; }
+details[open] > summary .more { transform: rotate(180deg); }
+.tail { white-space: nowrap; }
+/* Reading settles things: a dot empties, and the noise at the top calms (see markRead). */
+.node { transition: background-color 0.8s ease; }
+.lead svg { transition: color 1.2s ease; }
+#hero { transition: opacity 0.5s ease; }
+#hero.swap { opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .node, .lead svg, #hero { transition: none; } }
+
+.permit { margin: 14px 0 0; color: var(--ink-2); font-size: 0.95rem; }
+/* The reading lamp: the story at the reading point is in full ink, the rest fade with distance, and the
+   lifeline is inked down to where the reader is. */
+.feed { position: relative; }
+.inked { position: absolute; top: 64px; inset-inline-start: calc(var(--x) - 0.75px); width: 1.5px; height: 0; background: var(--ink); z-index: 1; pointer-events: none; }
+.node { z-index: 2; }
+/* The reading lamp: a pool of light around the story in focus. Stories near it stay in full ink, and the light
+   falls off further away, to no less than 45%. The lifeline is inked down to the story in focus, whose dot grows. */
+.story > .margin, .story > details { transition: opacity 0.25s ease; }
+.feed.lamp .story > .margin, .feed.lamp .story > details { opacity: var(--lamp, 1); }
+.story .node { transition: background-color 0.8s ease, transform 0.3s ease; }
+.story.lit .node { transform: scale(1.45); }
+.inked { transition: height 0.3s ease; }
+@media (prefers-reduced-motion: reduce) { .story > .margin, .story > details, .story .node, .inked { transition: none; } }
+/* Older days fold into a single row; one with something unread in it opens by itself. */
+.day-group > summary { list-style: none; cursor: pointer; }
+.day-group > summary::-webkit-details-marker { display: none; }
+.day-group > summary.row { display: grid; }
+.day-group .count { color: var(--ink-2); font-size: 0.95rem; align-self: center; }
+
+/* A day boundary: the line passes under the day's name. */
+.day { padding-block: 14px; }
+.day .margin { font-family: var(--head); font-weight: 500; color: var(--ink-2); white-space: nowrap; }
+.day::after { content: ""; position: absolute; top: 50%; inset-inline-start: calc(var(--x) - 7px); width: 14px; height: 1.5px; background: var(--ink-2); }
+/* The end: the line stops with a short bar, and the page says so. */
+.end { padding-block: 26px 10px; }
+.end::before { bottom: auto; height: 30px; }
+.end::after { content: ""; position: absolute; top: 30px; inset-inline-start: calc(var(--x) - 10px); width: 20px; height: 1.5px; background: var(--ink); }
+.end .msg { grid-column: 2; padding-top: 18px; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.end strong { font-family: var(--head); font-weight: 800; font-size: 1.25rem; }
+.end p { margin: 0; color: var(--ink-2); font-size: 0.95rem; }
+
+.empty { padding-block: 34px; color: var(--ink-2); }
+.empty strong { display: block; color: var(--ink); font-family: var(--head); font-weight: 800; font-size: 1.3rem; }
+
+
+footer { padding-block: 34px calc(36px + env(safe-area-inset-bottom, 0px)); color: var(--ink-3); font-size: 0.85rem; display: flex; flex-direction: column; gap: 10px; }
+.outlets { display: flex; flex-wrap: wrap; gap: 2px 14px; font-variant-numeric: tabular-nums; }
+.outlets .bad { color: var(--red); }
+.build { font-size: 0.75rem; color: var(--ink-3); opacity: 0.8; }
+.install { border-top: 1px solid var(--rule); padding-top: 12px; color: var(--ink-2); display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.install button { border: 0; background: var(--ink); color: var(--paper); padding: 5px 14px; font-weight: 600; cursor: pointer; }
+.notify textarea { width: 100%; height: 6.5em; margin-top: 6px; font: 0.72rem/1.4 ui-monospace, monospace; direction: ltr; color: var(--ink); background: var(--paper); border: 1px solid var(--line); padding: 6px; }
+
+@media (min-width: 720px) {
+  body { font-size: 18px; }
+  .name { font-size: 3.6rem; }
+  .hello h2 { font-size: 3rem; }
+  .story.top h3 { font-size: 1.8rem; }
+  .feed { --col: 58px; --gut: 24px; }
+}
+
+/* Paper preview b: נייר ב׳: גרעין וכתמים */
+body { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.11 0 0 0 0 0.17 0 0 0 0 0.35 0 0 0 0.08 0'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>"), url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><filter id='m'><feTurbulence type='fractalNoise' baseFrequency='0.012' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.45 0 0 0 0 0.38 0 0 0 0 0.25 0 0 0 0.09 0'/></filter><rect width='100%' height='100%' filter='url(%23m)'/></svg>"); }
+:root[data-theme="dark"] body { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.95 0 0 0 0 0.96 0 0 0 0 0.98 0 0 0 0.06 0'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>"), url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><filter id='m'><feTurbulence type='fractalNoise' baseFrequency='0.012' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.95 0 0 0 0 0.96 0 0 0 0 0.98 0 0 0 0.05 0'/></filter><rect width='100%' height='100%' filter='url(%23m)'/></svg>"); }
+.views, .mast { background: transparent; }
+:root:not([data-theme="dark"]) { --paper: #FCFBF7; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="mast">
+    <h1 class="name">בלי רעש</h1>
+    <div class="mast-end">
+      <span class="stamp" id="stamp" hidden></span>
+      <button class="mode" id="mode" type="button"></button>
+    </div>
+  </header>
+  <div class="strip"><span id="civil"></span><span id="hebrew"></span><span class="status" id="status">מתחבר…</span></div>
+</div>
+<main class="wrap">
+  <div id="view">
+    <div class="empty"><strong>טוען את הידיעות</strong>רגע אחד.</div>
+  </div>
+</main>
+<footer class="wrap" id="foot"></footer>
+
+<script>
+const TZ = "Asia/Jerusalem";
+const hmFmt = new Intl.DateTimeFormat("he-IL", { timeZone: TZ, hour: "2-digit", minute: "2-digit", hour12: false });
+const dayKeyFmt = new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" });
+const hourFmt = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, hour: "numeric", hour12: false });
+const weekdayFmt = new Intl.DateTimeFormat("he-IL", { timeZone: TZ, weekday: "long" });
+const civilFmt = new Intl.DateTimeFormat("he-IL", { timeZone: TZ, weekday: "long", day: "numeric", month: "long" });
+const hebrewFmt = new Intl.DateTimeFormat("he-IL-u-ca-hebrew", { timeZone: TZ, day: "numeric", month: "long", year: "numeric" });
+
+const state = { feed: null, failed: false, sig: "", prevSeen: null,
+                installEvent: null, installed: false, pendingReload: false };
+// The reader's previous visit: stories since then are new, and the noise at the top of the line counts them.
+try { state.prevSeen = localStorage.getItem("bli-last-seen"); } catch (e) {}
+// Which stories the reader has actually had on screen, by id and version (an update makes a story new again).
+try { state.seen = JSON.parse(localStorage.getItem("bli-seen") || "null"); } catch (e) { state.seen = null; }
+const markSeen = () => { try { localStorage.setItem("bli-last-seen", new Date().toISOString()); } catch (e) {} };
+
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const isHttp = u => /^https?:\/\//.test(u || "");
+const fmt = (f, iso) => { try { return f.format(new Date(iso)); } catch (e) { return ""; } };
+const ms = iso => new Date(iso).getTime();
+const nowIso = () => new Date().toISOString();
+const dayKey = iso => fmt(dayKeyFmt, iso);
+const hm = iso => fmt(hmFmt, iso);
+
+function ago(iso) {
+  const m = Math.round((Date.now() - ms(iso)) / 60000);
+  if (!Number.isFinite(m)) return "";
+  if (m < 1) return "עכשיו";
+  if (m < 60) return `לפני ${m} דק׳`;
+  const h = Math.floor(m / 60);
+  return h === 1 ? "לפני שעה" : h === 2 ? "לפני שעתיים" : `לפני ${h} שעות`;
+}
+// Calendar arithmetic on the Israeli date itself, so "yesterday" survives the daylight-saving change.
+function shiftKey(key, days) {
+  const [y, m, d] = key.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
+}
+function dayLabel(iso) {
+  const k = dayKey(iso), today = dayKey(nowIso());
+  if (k === today) return "היום";
+  if (today && k === shiftKey(today, -1)) return "אתמול";
+  if (today && k === shiftKey(today, -2)) return "שלשום";
+  return fmt(weekdayFmt, iso);
+}
+// A time together with its day ("היום ב-19:14", "אתמול ב-18:43", "ביום שלישי ב-18:43"), for anything that can cross midnight.
+function when(iso) {
+  const d = dayLabel(iso);
+  return `${d === "היום" || d === "אתמול" || d === "שלשום" ? d : "ב" + d} ב-${hm(iso)}`;
+}
+// Browsers give the Hebrew date with Arabic digits; papers print it in letters ("ד׳ בחשוון תשפ״ז").
+function gematria(n) {
+  const L = [[400, "ת"], [300, "ש"], [200, "ר"], [100, "ק"], [90, "צ"], [80, "פ"], [70, "ע"], [60, "ס"], [50, "נ"], [40, "מ"],
+             [30, "ל"], [20, "כ"], [10, "י"], [9, "ט"], [8, "ח"], [7, "ז"], [6, "ו"], [5, "ה"], [4, "ד"], [3, "ג"], [2, "ב"], [1, "א"]];
+  let s = "";
+  n %= 1000;
+  for (const [v, ch] of L) {
+    while (n >= v) {
+      if (n === 15 || n === 16) { s += n === 15 ? "טו" : "טז"; n = 0; break; }  // never spell the divine name
+      s += ch; n -= v;
+    }
+  }
+  return s.length === 1 ? s + "׳" : s.slice(0, -1) + "״" + s.slice(-1);
+}
+function hebrewDate(d) {
+  try {
+    const p = Object.fromEntries(hebrewFmt.formatToParts(d).map(x => [x.type, x.value]));
+    return `${gematria(+p.day)} ב${p.month.replace(/^ב/, "")} ${gematria(+p.year)}`;
+  } catch (e) { return ""; }
+}
+function edition() {
+  const h = Number(hourFmt.format(new Date()));
+  return "מהדורת " + (h >= 5 && h < 12 ? "בוקר" : h >= 12 && h < 17 ? "צהריים" : h >= 17 && h < 22 ? "ערב" : "לילה");
+}
+// The last visit counts only if it was within the past day; after longer, the page opens on the whole day.
+function lastVisit() {
+  const t = ms(state.prevSeen);
+  return Number.isFinite(t) && t < Date.now() && Date.now() - t < 864e5 ? t : null;
+}
+
+// One entry per outlet, with a link when one of its reports has a real address (some feeds omit it).
+const outletList = s => {
+  const seen = new Map();
+  for (const x of s.sources || []) {
+    const url = isHttp(x.url) ? x.url : "";
+    if (!seen.has(x.name) || (url && !seen.get(x.name))) seen.set(x.name, url);
+  }
+  return [...seen];
+};
+
+// When the story was first reported and when it was confirmed. Day words appear only when the days differ,
+// and a short gap isn't worth a line.
+function storyNote(s) {
+  const sameDay = dayKey(s.created) === dayKey(s.updated);
+  const first = sameDay ? `ב-${hm(s.created)}` : when(s.created);
+  if (s.updates > 0) return `פורסם לראשונה ${first}`;
+  if (ms(s.updated) - ms(s.created) < 30 * 60000) return "";
+  return `דווח לראשונה ${first}, אושר ${sameDay ? `ב-${hm(s.updated)}` : when(s.updated)}`;
+}
+
+const isSeen = s => !!state.seen && state.seen[s.id] === s.updated;
+function saveSeen() {
+  const ids = new Set((state.feed?.stories || []).map(s => s.id));
+  if (ids.size) for (const k of Object.keys(state.seen || {})) if (!ids.has(k)) delete state.seen[k];
+  try { localStorage.setItem("bli-seen", JSON.stringify(state.seen)); } catch (e) {}
+}
+// A reader who visited before per-story tracking existed: everything up to that visit counts as read.
+function seedSeen(stories) {
+  const last = lastVisit();
+  if (state.seen !== null || last == null || !stories.length) return;
+  state.seen = {};
+  for (const s of stories) if (ms(s.updated) <= last) state.seen[s.id] = s.updated;
+  saveSeen();
+}
+
+function heroLine(stories, n) {
+  const last = lastVisit();
+  if (state.seen === null && last == null) {   // a first visit: the day at a glance
+    const d = stories.filter(s => ms(s.updated) >= Date.now() - 864e5).length;
+    if (d === 0) return `לא קרה משהו שחשוב<span class="soft">לדעת ביממה האחרונה.</span>`;
+    return `${d === 1 ? "דבר אחד חשוב" : `${d} דברים חשובים`}<span class="soft">ביממה האחרונה.</span>`;
+  }
+  const lastIso = last == null ? null : new Date(last).toISOString();
+  const at = lastIso ? (dayKey(lastIso) === dayKey(nowIso()) ? hm(lastIso) : when(lastIso)) : "";
+  if (n === 0) return at ? `שקט מאז ${at}.<span class="soft">אין חדש.</span>` : `שקט.<span class="soft">אין חדש מאז הביקור הקודם.</span>`;
+  return `${n === 1 ? "דבר אחד חדש" : `${n} דברים חדשים`}<span class="soft">${at ? `מאז ${at}` : "מאז הביקור הקודם"}.</span>`;
+}
+
+// The brand mark, turned to run down the page: three waves, each calmer than the last. Their swing is the
+// number of unread stories, so the line is still once everything new has been read.
+function noisePath(amp, h = 64) {
+  const swings = 6, seg = (h * 0.8) / swings;
+  let d = "M12 0", y = 0;
+  for (let i = 0; i < swings; i++) {
+    const a = amp * (1 - i / swings) * (i % 2 ? -1 : 1);
+    d += ` Q${(12 + a * 1.6).toFixed(2)} ${(y + seg / 2).toFixed(2)}, 12 ${(y + seg).toFixed(2)}`;
+    y += seg;
+  }
+  return d + ` L12 ${h}`;
+}
+const ampFor = unread => unread ? Math.min(5 + unread * 2, 13) : 0;
+let lineAmp = 0;
+function settleLine(target) {
+  const lead = document.querySelector(".lead"), path = lead?.querySelector("path");
+  if (!path) return;
+  const from = lineAmp, start = performance.now();
+  const dur = matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 1400;
+  lineAmp = target;
+  lead.classList.toggle("quiet", target === 0);
+  const step = now => {
+    const t = dur ? Math.min(1, (now - start) / dur) : 1, e = 1 - Math.pow(1 - t, 3);
+    path.setAttribute("d", noisePath(from + (target - from) * e));
+    if (t < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+// New headlines on screen are read one at a time, top first, at about the pace of reading a headline,
+// so the line settles as the reader goes down the list. Opening a story reads it at once.
+const READ_PACE_MS = 1800;
+let reader = null, readTimer = null;
+const visible = new Set();
+function readNext() {
+  const next = [...document.querySelectorAll(".story.fresh")].find(el => visible.has(el));
+  if (!next) { clearInterval(readTimer); readTimer = null; return; }
+  markRead(next);
+}
+function watchReading() {
+  reader?.disconnect();
+  visible.clear();
+  clearInterval(readTimer); readTimer = null;
+  if (!("IntersectionObserver" in window)) return;
+  reader = new IntersectionObserver(entries => {
+    for (const e of entries) {
+      if (e.isIntersecting && e.intersectionRatio >= 0.6) visible.add(e.target); else visible.delete(e.target);
+    }
+    if (visible.size && !readTimer) readTimer = setInterval(readNext, READ_PACE_MS);
+  }, { threshold: [0, 0.6, 1] });
+  document.querySelectorAll(".story.fresh").forEach(el => reader.observe(el));
+}
+function markRead(el) {
+  const s = (state.feed?.stories || []).find(x => x.id === el.dataset.id);
+  if (!s || !el.classList.contains("fresh")) return;
+  el.classList.remove("fresh");
+  reader?.unobserve(el);
+  visible.delete(el);
+  state.seen = state.seen || {};
+  state.seen[s.id] = s.updated;
+  saveSeen();
+  const left = document.querySelectorAll(".story.fresh").length;
+  settleLine(ampFor(left));
+  if (!left) {
+    const hero = document.getElementById("hero");
+    hero.classList.add("swap");
+    setTimeout(() => {
+      hero.innerHTML = `ראית הכול.<span class="soft">אין חדש נוסף.</span>`;
+      hero.classList.remove("swap");
+      if (canClose()) document.getElementById("permit").hidden = false;
+    }, 500);
+  }
+}
+
+function storyHtml(s, top) {
+  const seen = isSeen(s);
+  const links = outletList(s).map(([name, url]) => url
+    ? `<a href="${esc(url)}" target="_blank" rel="noopener"><bdi>${esc(name)}</bdi></a>` : `<bdi>${esc(name)}</bdi>`).join(", ");
+  const note = storyNote(s);
+  const body = `<p>${esc(s.summary)}</p>
+      <div class="byline">דיווחו: ${links}${note ? `<span class="note">${note}</span>` : ""}</div>`;
+  // The last word travels with the stamp and the chevron, so the chevron never sits alone on a line.
+  const h = String(s.headline), cut = h.lastIndexOf(" ") + 1;
+  const tail = `<span class="tail">${esc(h.slice(cut))}${!seen && s.updates > 0 ? `<span class="edited">עודכן</span>` : ""}${MORE}</span>`;
+  const head = `${seen ? "" : `<span class="sr">חדש: </span>`}${esc(h.slice(0, cut))}${tail}`;
+  return `<article class="row story ${seen ? "seen" : "fresh"}${top && !seen ? " top" : ""}" data-id="${esc(s.id)}">
+    <span class="node" aria-hidden="true"></span>
+    <div class="margin"><div class="t">${hm(s.updated)}</div><div class="topic">${esc(s.topic)}</div></div>
+    <details><summary><h3>${head}</h3></summary>${body}</details>
+  </article>`;
+}
+const MORE = '<svg class="more" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4.5 L6 8.5 L10 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+// Opening a new story reads it at once.
+document.addEventListener("toggle", e => {
+  const story = e.target.closest?.(".story.fresh");
+  if (story && e.target.open) markRead(story);
+}, true);
+
+// "You can close this" is only true once notifications reach this phone.
+const canClose = () => "Notification" in window && Notification.permission === "granted";
+
+// The reading lamp: fade stories by their distance from the reading point, and ink the lifeline down to it.
+function lamp() {
+  const feed = document.querySelector(".feed");
+  if (!feed) return;
+  const rows = [...feed.querySelectorAll(".story")].filter(el => el.getBoundingClientRect().height);
+  if (!rows.length) return;
+  // The lamp hangs over the middle of the screen, where the reader's eyes are. Stories within `near` of it are
+  // in full ink; beyond, the light falls off to no less than 45% at `far`.
+  const center = innerHeight / 2, near = innerHeight * 0.18, far = innerHeight * 0.6;
+  let lit = rows[0], best = Infinity;
+  feed.classList.add("lamp");
+  for (const el of rows) {
+    const r = el.getBoundingClientRect();
+    const d = center < r.top ? r.top - center : center > r.bottom ? center - r.bottom : 0;
+    if (d < best) { best = d; lit = el; }
+    el.style.setProperty("--lamp", d <= near ? "1" : Math.max(0.45, 1 - 0.55 * (d - near) / (far - near)).toFixed(2));
+  }
+  for (const el of rows) el.classList.toggle("lit", el === lit);
+  // The lifeline is inked down to the dot of the story under the lamp.
+  const node = lit.querySelector(".node");
+  const y = lit.getBoundingClientRect().top - feed.getBoundingClientRect().top + (node ? node.offsetTop + 5 : 0);
+  feed.querySelector(".inked").style.height = Math.max(0, y - 64) + "px";
+}
+let lampQueued = false;
+const queueLamp = () => { if (!lampQueued) { lampQueued = true; requestAnimationFrame(() => { lampQueued = false; lamp(); }); } };
+addEventListener("scroll", queueLamp, { passive: true });
+addEventListener("resize", queueLamp);
+document.addEventListener("toggle", queueLamp, true);
+
+// How much was left out, in one sentence: the reassurance of a finite page, without a second feed to scroll.
+const SHORT = { "פשיעה ותאונות": "פשיעה ותאונות", "דעות ופרשנות": "דעות", "קמפיין וסקרים": "קמפיין הבחירות",
+  "השערות ודיווחים לא מאומתים": "השערות", "חדשות חוץ": "חדשות חוץ שגרתיות", "ספורט": "ספורט", "תרבות ופנאי": "תרבות",
+  "צרכנות ולייף סטייל": "צרכנות", "עסקים ושוק ההון": "עסקים" };
+function endLine() {
+  const c = state.feed?.cuts;
+  if (!c?.total) return "כל השאר לא עבר את הסינון.";
+  const top = Object.keys(c.by_category || {}).filter(k => SHORT[k]).slice(0, 3).map(k => SHORT[k]);
+  const list = top.length < 2 ? top.join("") : top.slice(0, -1).join(", ") + " ו" + top[top.length - 1];
+  return `${c.total.toLocaleString("he-IL")} דיווחים אחרים מהיממה האחרונה לא עברו את הסינון${list ? `, בעיקר ${list}` : ""}.`;
+}
+
+function renderNews() {
+  // Until the first answer arrives there is nothing to say "quiet" about.
+  if (!state.feed && !state.failed) return `<div class="empty"><strong>טוען את הידיעות</strong>רגע אחד.</div>`;
+  const stories = [...(state.feed?.stories || [])].sort((a, b) => String(b.updated).localeCompare(String(a.updated)));
+  seedSeen(stories);
+  const fresh = stories.filter(s => !isSeen(s)).length;
+  let out = `<section class="hello"><h2 id="hero">${heroLine(stories, fresh)}</h2>
+    <p class="permit" id="permit"${fresh || !canClose() ? " hidden" : ""}>אפשר לסגור. אם יקרה משהו דחוף, תקבל התראה.</p></section>`;
+  if (!stories.length) {
+    return out + `<div class="empty"><strong>${state.failed ? "אין חיבור כרגע" : "עוד אין ידיעות"}</strong>${state.failed ? "כשיחזור החיבור הדף יתעדכן לבד." : "ידיעות שדווחו בכלי תקשורת משתי קבוצות בעלות לפחות יופיעו כאן."}</div>`;
+  }
+  lineAmp = ampFor(fresh);
+  out += `<div class="feed"><div class="lead${fresh ? "" : " quiet"}" aria-hidden="true"><svg viewBox="0 0 24 64">
+    <path d="${noisePath(lineAmp)}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>`;
+  out += `<div class="inked" aria-hidden="true"></div>`;
+  const dayAgo = Date.now() - 864e5;
+  const recent = stories.filter(s => ms(s.updated) >= dayAgo), older = stories.filter(s => ms(s.updated) < dayAgo);
+  let day = "היום", first = true;
+  for (const s of recent) {
+    const d = dayLabel(s.updated);
+    if (d !== day) { out += `<div class="row day"><div class="margin">${esc(d)}</div></div>`; day = d; }
+    out += storyHtml(s, first);
+    first = false;
+  }
+  if (older.length) {
+    const unread = older.filter(s => !isSeen(s)).length, n = older.length;
+    const rows = older.map(s => { const h = storyHtml(s, first); first = false; return h; }).join("");
+    out += `<details class="day-group"${unread ? " open" : ""}><summary class="row day"><div class="margin"></div>
+      <div class="count">מוקדם יותר: ${n === 1 ? "ידיעה אחת" : `${n} ידיעות`}${unread ? `, ${unread === 1 ? "אחת חדשה" : `${unread} חדשות`}` : ""}${MORE}</div></summary>${rows}</details>`;
+  }
+  out += `<div class="row end"><div class="msg"><strong>זהו, עד כאן.</strong><p>${endLine()}</p></div></div></div>`;
+  return out;
+}
+
+// Masthead and dateline: the edition of the day, the date in both calendars, and when the feed was last checked.
+function renderStatus() {
+  const stamp = document.getElementById("stamp");
+  stamp.textContent = edition();
+  stamp.hidden = false;
+  const now = new Date();
+  document.getElementById("civil").textContent = civilFmt.format(now);
+  document.getElementById("hebrew").textContent = hebrewDate(now);
+  const el = document.getElementById("status");
+  if (!state.feed?.updated) { el.className = "status"; el.textContent = state.failed ? "אין חיבור" : "מתחבר…"; return; }
+  const t = state.feed.updated;
+  const stale = (Date.now() - ms(t)) / 60000 > 45;
+  const at = dayKey(t) === dayKey(nowIso()) ? hm(t) : when(t);
+  el.className = "status" + (stale ? " stale" : "");
+  el.textContent = stale ? `לא התעדכן מאז ${at}` : `נבדק ${at}`;
+}
+
+const MOON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>';
+const SUN = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+function applyTheme(dark) {
+  document.documentElement.dataset.theme = dark ? "dark" : "light";
+  document.getElementById("theme-color").content = dark ? "#1C2B5A" : "#FFFFFF";
+  const b = document.getElementById("mode");
+  b.innerHTML = dark ? SUN : MOON;
+  b.setAttribute("aria-label", dark ? "תצוגה בהירה" : "תצוגה כהה");
+  b.title = b.getAttribute("aria-label");
+}
+applyTheme(document.documentElement.dataset.theme === "dark");
+document.getElementById("mode").addEventListener("click", () => {
+  const dark = document.documentElement.dataset.theme !== "dark";
+  applyTheme(dark);
+  try { localStorage.setItem("bli-theme", dark ? "dark" : "light"); } catch (e) {}
+});
+
+// Which version of the page this is (the commit it was deployed from; filled in by cloud_run.py).
+const BUILD = "__BUILD__";
+const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const onPhone = matchMedia("(pointer: coarse)").matches;
+
+function renderFoot() {
+  const h = state.feed?.health || [];
+  const standalone = state.installed || matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+  let html = "";
+  if (h.length) {
+    html += `<div>הידיעות נאספות מ-${h.length} כלי תקשורת ונבדקות כל כמה דקות. ידיעה מופיעה רק כשדיווחו עליה כלי תקשורת משתי קבוצות בעלות לפחות.</div>
+      <div class="outlets">${h.map(x => `<span class="${x.ok ? "" : "bad"}" title="${esc(x.error || "")}"><bdi>${esc(x.source)}</bdi>${x.ok ? (x.newest ? ", " + ago(x.newest) : "") : ", תקלה"}</span>`).join("")}</div>`;
+  }
+  if (!standalone) {
+    if (state.installEvent) html += `<div class="install">אפשר להתקין את בלי רעש כאפליקציה. <button id="install">התקנה</button></div>`;
+    else if (isIOS) html += `<div class="install">להתקנה כאפליקציה: בספארי לוחצים על כפתור השיתוף ובוחרים "הוספה למסך הבית".</div>`;
+    else if (onPhone) html += `<div class="install">להתקנה כאפליקציה: בתפריט הדפדפן בוחרים "הוספה למסך הבית".</div>`;
+  }
+  if (WANTS_NOTIFY) html += notifyBox();
+  html += `<div class="build">גרסה <bdi>${BUILD}</bdi></div>`;
+  document.getElementById("foot").innerHTML = html;
+}
+
+// Notifications for the owner's phone. Opening the page with ?notify shows this box: allowing notifications gives
+// a code (the phone's push subscription) that becomes the PUSH_SUBSCRIPTION secret the cloud job pushes to.
+// The public key below pairs with the VAPID_PRIVATE_KEY secret that signs every push.
+const VAPID_PUBLIC = "BOaVbF__MgOysRNX-3RFXiveggNL12YEs_aVTgp3esZmBxTkqA8ZPKjQOVbOk6aQ8japNVrALQ85cgVouKkBi6E";
+const WANTS_NOTIFY = new URLSearchParams(location.search).has("notify");
+function notifyBox() {
+  if (!("serviceWorker" in navigator && "PushManager" in window && "Notification" in window)) {
+    return `<div class="install notify">הדפדפן הזה לא תומך בהתראות. ב-Android פותחים את הדף ב-Chrome.</div>`;
+  }
+  if (state.pushCode) {
+    return `<div class="install notify"><div>ההתראות הופעלו בטלפון הזה. כדי לחבר אותן, שלח את הקוד הזה ל-Claude:
+      <textarea id="push-code" readonly>${esc(state.pushCode)}</textarea></div><button id="push-copy">${state.pushCopied ? "הועתק" : "העתקת הקוד"}</button></div>`;
+  }
+  return `<div class="install notify">התראות על ידיעות דחופות, ישירות לטלפון הזה. <button id="push-on">הפעלה</button>${state.pushNote ? `<div>${esc(state.pushNote)}</div>` : ""}</div>`;
+}
+const b64urlBytes = s => Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/") + "=".repeat((4 - s.length % 4) % 4)), c => c.charCodeAt(0));
+async function enableNotifications() {
+  try {
+    if (await Notification.requestPermission() !== "granted") {
+      state.pushNote = "ההרשאה להתראות לא ניתנה. אפשר לאשר אותה בהגדרות האתר בדפדפן ולנסות שוב.";
+      return renderFoot();
+    }
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription()
+      || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64urlBytes(VAPID_PUBLIC) });
+    state.pushCode = JSON.stringify(sub.toJSON());
+  } catch (e) {
+    state.pushNote = "לא הצלחתי להפעיל התראות: " + e.message;
+  }
+  renderFoot();
+}
+
+// Rebuild the view, keeping the reader's place when stories are added above what they're reading.
+function render({ keepPlace = false } = {}) {
+  const view = document.getElementById("view");
+  let anchor = null;
+  if (keepPlace && window.scrollY > 0) {
+    for (const a of view.querySelectorAll(".story")) {
+      const r = a.getBoundingClientRect();
+      if (r.bottom > 0) { anchor = { id: a.dataset.id, top: r.top }; break; }
+    }
+  }
+  view.innerHTML = renderNews();
+  watchReading();
+  lamp();
+  if (anchor) {
+    const el = [...view.querySelectorAll(".story")].find(a => a.dataset.id === anchor.id);
+    if (el) window.scrollBy(0, el.getBoundingClientRect().top - anchor.top);
+  }
+  renderStatus();
+  renderFoot();
+}
+
+document.addEventListener("click", e => {
+  if (e.target.closest("#push-on")) { enableNotifications(); return; }
+  if (e.target.closest("#push-copy")) {
+    const done = () => { state.pushCopied = true; renderFoot(); };
+    navigator.clipboard?.writeText(state.pushCode).then(done, () => { document.getElementById("push-code").select(); });
+    return;
+  }
+  if (e.target.closest("#install") && state.installEvent) {
+    state.installEvent.prompt();
+    state.installEvent.userChoice.finally(() => { state.installEvent = null; renderFoot(); });
+  }
+});
+
+async function pull(name) {
+  // Revalidate with the server each time; unchanged files come back as a cheap "not modified".
+  const r = await fetch(name, { cache: "no-cache" });
+  if (!r.ok) throw new Error(String(r.status));
+  return r.json();
+}
+
+const signature = () => [state.failed, state.prevSeen, (state.feed?.stories || []).map(s => s.id + s.updated).join(","),
+  state.feed?.cuts?.total].join("|");
+
+async function refresh(force) {
+  if (document.hidden && !force) return;
+  try { state.feed = await pull("feed.json"); state.failed = false; } catch (e) { if (!state.feed) state.failed = true; }
+  const sig = signature();
+  if (sig !== state.sig) { const first = !state.sig; state.sig = sig; render({ keepPlace: !first }); }
+  else { renderStatus(); renderFoot(); }
+}
+
+// The installed app picks up a new version of itself, but never reloads while someone is reading.
+let swReg = null;
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js").then(r => { swReg = r; }).catch(() => {});
+  let hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (!hadController) { hadController = true; return; }
+    if (document.hidden) location.reload(); else state.pendingReload = true;
+  });
+}
+let hiddenAt = 0;
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) { hiddenAt = Date.now(); markSeen(); if (state.pendingReload) location.reload(); return; }
+  // An installed app is resumed, not reopened. Back after a real break counts as a new visit,
+  // so "new since" starts from when the reader left, and the page opens at the top.
+  if (hiddenAt && Date.now() - hiddenAt >= 10 * 60000) {
+    state.prevSeen = new Date(hiddenAt).toISOString();
+    state.sig = "";
+    window.scrollTo(0, 0);
+  }
+  refresh(true);
+  swReg?.update().catch(() => {});
+});
+window.addEventListener("pagehide", markSeen);
+window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); state.installEvent = e; renderFoot(); });
+window.addEventListener("appinstalled", () => { state.installed = true; state.installEvent = null; renderFoot(); });
+
+render();
+refresh(true);
+setInterval(refresh, 60000);
+setInterval(renderStatus, 60000);
+</script>
+</body>
+</html>
