@@ -291,13 +291,17 @@ function saveSeen() {
   if (ids.size) for (const k of Object.keys(state.seen || {})) if (!ids.has(k)) delete state.seen[k];
   try { localStorage.setItem("bli-seen", JSON.stringify(state.seen)); } catch (e) {}
 }
-// A reader who visited before per-story tracking existed: everything up to that visit counts as read.
+// New means new since the previous visit: whatever was already on the page then counts as read, even if the
+// reader never scrolled down to it, so old headlines don't come back heavy days later.
 function seedSeen(stories) {
-  const last = lastVisit();
-  if (state.seen !== null || last == null || !stories.length) return;
-  state.seen = {};
-  for (const s of stories) if (ms(s.updated) <= last) state.seen[s.id] = s.updated;
-  saveSeen();
+  const last = ms(state.prevSeen);
+  if (!Number.isFinite(last) || !stories.length) return;
+  state.seen = state.seen || {};
+  let changed = false;
+  for (const s of stories) {
+    if (ms(s.updated) <= last && state.seen[s.id] !== s.updated) { state.seen[s.id] = s.updated; changed = true; }
+  }
+  if (changed) saveSeen();
 }
 
 function heroLine(stories, n) {
@@ -350,7 +354,7 @@ const visible = new Set();
 function readNext() {
   const next = [...document.querySelectorAll(".story.fresh")].find(el => visible.has(el));
   if (!next) { clearInterval(readTimer); readTimer = null; return; }
-  markRead(next);
+  markRead([next]);
 }
 function watchReading() {
   reader?.disconnect();
@@ -365,14 +369,19 @@ function watchReading() {
   }, { threshold: [0, 0.6, 1] });
   document.querySelectorAll(".story.fresh").forEach(el => reader.observe(el));
 }
-function markRead(el) {
-  const s = (state.feed?.stories || []).find(x => x.id === el.dataset.id);
-  if (!s || !el.classList.contains("fresh")) return;
-  el.classList.remove("fresh");
-  reader?.unobserve(el);
-  visible.delete(el);
-  state.seen = state.seen || {};
-  state.seen[s.id] = s.updated;
+function markRead(els) {
+  let n = 0;
+  for (const el of els) {
+    const s = (state.feed?.stories || []).find(x => x.id === el.dataset.id);
+    if (!s || !el.classList.contains("fresh")) continue;
+    el.classList.remove("fresh");
+    reader?.unobserve(el);
+    visible.delete(el);
+    state.seen = state.seen || {};
+    state.seen[s.id] = s.updated;
+    n++;
+  }
+  if (!n) return;
   saveSeen();
   const left = document.querySelectorAll(".story.fresh").length;
   settleLine(ampFor(left));
@@ -408,7 +417,7 @@ const MORE = '<svg class="more" viewBox="0 0 12 12" aria-hidden="true"><path d="
 // Opening a new story reads it at once.
 document.addEventListener("toggle", e => {
   const story = e.target.closest?.(".story.fresh");
-  if (story && e.target.open) markRead(story);
+  if (story && e.target.open) markRead([story]);
 }, true);
 
 // "You can close this" is only true once notifications reach this phone.
@@ -424,9 +433,14 @@ function lamp() {
   // there are in full ink. Below that the light falls off, to no less than 45% at `far` past the middle.
   const center = innerHeight / 2, near = innerHeight * 0.18, far = innerHeight * 0.6;
   let lit = rows[0], best = Infinity;
+  const passed = [];
   feed.classList.add("lamp");
   for (const el of rows) {
     const r = el.getBoundingClientRect();
+    // Scrolled past is read, however fast. Only a story that was on or below the screen before counts, not one
+    // that just arrived above where the reader is.
+    if (r.bottom >= 0) el.dataset.below = "1";
+    else if (el.dataset.below && el.classList.contains("fresh")) passed.push(el);
     const d = center < r.top ? r.top - center : center > r.bottom ? center - r.bottom : 0;
     if (d < best) { best = d; lit = el; }
     const below = Math.max(0, r.top - center);   // only what starts below the middle is dimmed
@@ -437,6 +451,7 @@ function lamp() {
   const node = lit.querySelector(".node");
   const y = lit.getBoundingClientRect().top - feed.getBoundingClientRect().top + (node ? node.offsetTop + 5 : 0);
   feed.querySelector(".inked").style.height = Math.max(0, y - 64) + "px";
+  if (passed.length) markRead(passed);
 }
 let lampQueued = false;
 const queueLamp = () => { if (!lampQueued) { lampQueued = true; requestAnimationFrame(() => { lampQueued = false; lamp(); }); } };
