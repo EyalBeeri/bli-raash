@@ -38,7 +38,7 @@
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
+html { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; }   /* no blue box on tap; see :active below */
 body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.7; -webkit-font-smoothing: antialiased; }
 a { color: inherit; }
 button { font: inherit; color: inherit; }
@@ -105,6 +105,11 @@ button { font: inherit; color: inherit; }
 /* The hint that a headline opens: a small chevron after it, turning over when open. */
 .more { display: inline-block; width: 11px; height: 11px; margin-inline-start: 7px; vertical-align: 0.12em; color: var(--ink-3); transition: transform 0.2s ease; }
 details[open] > summary .more { transform: rotate(180deg); }
+/* Pressing a headline: the ink lifts a little and the chevron dips the way it points, instead of the browser's blue box. */
+.story summary h3, .day-group > summary .count { transition: opacity 0.12s ease; }
+.story summary:active h3, .day-group > summary:active .count { opacity: 0.5; }
+summary:active .more { transform: translateY(2px); }
+details[open] > summary:active .more { transform: rotate(180deg) translateY(2px); }
 .tail { white-space: nowrap; }
 /* Reading settles things: a dot empties, and the noise at the top calms (see markRead). */
 .node { transition: background-color 0.8s ease; }
@@ -412,6 +417,8 @@ function storyHtml(s) {
   </article>`;
 }
 const MORE = '<svg class="more" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4.5 L6 8.5 L10 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+// iPhones apply :active (the press effect on headlines) only once the page listens for touches.
+document.addEventListener("touchstart", () => {}, { passive: true });
 // Opening a new story reads it at once.
 document.addEventListener("toggle", e => {
   const story = e.target.closest?.(".story.fresh");
